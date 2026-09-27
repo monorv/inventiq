@@ -1,0 +1,2218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0c1424">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="InventIQ">
+<title>InventIQ Pro</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;600&display=swap');
+:root{
+  --bg:#06090f;--surface:#0c1424;--surface2:#101d36;--surface3:#152444;
+  --border:#1c3060;--accent:#4a8ff5;--accent2:#7db8ff;--glow:rgba(74,143,245,.14);
+  --danger:#f05c6a;--success:#2ec47a;--warn:#f59e0b;--text:#dde8ff;--muted:#4e6a9a;--white:#fff;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Plus Jakarta Sans',sans-serif;min-height:100vh;}
+.container{display:flex;height:100vh;overflow:hidden;}
+.sidebar{width:64px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;align-items:center;padding:16px 0;gap:16px;position:sticky;top:0;overflow-y:auto;}
+.sidebar-item{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;border:1px solid transparent;font-size:20px;}
+.sidebar-item:hover{background:var(--surface2);border-color:var(--border);}
+.sidebar-item.active{background:var(--glow);border-color:var(--accent);}
+.main-content{flex:1;display:flex;flex-direction:column;overflow-y:auto;}
+header{padding:16px 32px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 24px rgba(0,0,0,.5);z-index:40;}
+.logo{display:flex;align-items:center;gap:10px;}
+.logo-icon{width:34px;height:34px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:17px;}
+header h1{font-size:19px;font-weight:800;color:var(--white);}
+header h1 span{color:var(--accent);}
+.header-right{display:flex;gap:16px;align-items:center;}
+.user-badge{display:flex;align-items:center;gap:8px;padding:6px 12px;background:var(--surface2);border-radius:8px;font-size:11px;border:1px solid var(--border);}
+.user-role{color:var(--accent);}
+.notif-bell{position:relative;cursor:pointer;font-size:18px;}
+.notif-badge{position:absolute;top:-6px;right:-6px;width:18px;height:18px;background:var(--danger);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;font-weight:700;}
+.notifications-panel{position:fixed;top:60px;right:32px;width:320px;max-height:400px;background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.4);z-index:100;display:none;overflow-y:auto;}
+.notifications-panel.open{display:block;}
+.notif-item{padding:12px;border-bottom:1px solid var(--border);font-size:12px;}
+.notif-item:last-child{border-bottom:none;}
+.notif-time{color:var(--muted);font-size:9px;margin-top:4px;}
+.tabs{display:flex;background:var(--surface);border-bottom:1px solid var(--border);padding:0 32px;overflow-x:auto;gap:2px;}
+.tab{padding:13px 20px;cursor:pointer;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);border-bottom:2px solid transparent;transition:all .2s;white-space:nowrap;flex-shrink:0;}
+.tab.active{color:var(--accent2);border-bottom-color:var(--accent);}
+.tab:hover:not(.active){color:var(--text);}
+.content{flex:1;overflow-y:auto;padding:24px 32px;}
+.page{display:none;}
+.page.active{display:block;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:22px;margin-bottom:16px;}
+.card-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--accent);margin-bottom:16px;display:flex;align-items:center;gap:7px;}
+.card-title::before{content:'';display:inline-block;width:3px;height:13px;background:var(--accent);border-radius:2px;}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+.stat-box{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px;}
+.stat-label{font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);font-weight:700;}
+.stat-value{font-size:28px;font-weight:800;color:var(--accent2);margin-top:6px;font-family:'IBM Plex Mono',monospace;}
+.stat-change{font-size:10px;color:var(--success);margin-top:6px;}
+.btn{padding:9px 18px;border-radius:8px;border:none;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;transition:all .2s;}
+.btn-primary{background:var(--accent);color:#fff;}
+.btn-primary:hover{background:var(--accent2);transform:translateY(-1px);box-shadow:0 4px 16px rgba(74,143,245,.35);}
+.btn-success{background:var(--success);color:#fff;}
+.btn-success:hover{background:#3ddd8e;transform:translateY(-1px);}
+.btn-ghost{background:transparent;color:var(--accent);border:1px solid var(--border);}
+.btn-danger{background:transparent;color:var(--danger);border:1px solid rgba(240,92,106,.3);}
+.btn-sm{padding:5px 13px;font-size:10px;}
+.badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:.4px;}
+.badge.g{background:rgba(46,196,122,.1);color:#4de49a;border:1px solid rgba(46,196,122,.22);}
+.badge.o{background:rgba(245,158,11,.1);color:#fbbf24;border:1px solid rgba(245,158,11,.22);}
+.badge.r{background:rgba(240,92,106,.1);color:#f87171;border:1px solid rgba(240,92,106,.22);}
+.badge.p{background:rgba(167,139,250,.1);color:#a78bfa;border:1px solid rgba(167,139,250,.22);}
+.user-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px;margin-top:16px;}
+.user-card{background:var(--surface2);border:1px solid var(--border);border-radius:20px;overflow:hidden;box-shadow:0 20px 40px rgba(0,0,0,.12);}
+.user-card-header{display:flex;align-items:center;gap:16px;padding:20px 20px 14px;}
+.user-card-avatar{width:58px;height:58px;border-radius:18px;background:linear-gradient(135deg,#4a8ff5,#7db8ff);display:flex;align-items:center;justify-content:center;color:#fff;font-size:22px;font-weight:800;}
+.user-card-name{font-size:18px;font-weight:800;color:#fff;line-height:1.1;margin-bottom:6px;}
+.user-card-role{font-size:12px;text-transform:uppercase;color:var(--accent);letter-spacing:.12em;font-weight:700;}
+.user-card-body{padding:0 20px 20px;}
+.user-card-meta{display:grid;gap:12px;font-size:12px;color:var(--muted);line-height:1.7;}
+.user-card-meta div{display:flex;justify-content:space-between;gap:10px;}
+.user-card-meta span:first-child{color:var(--text);}
+.user-card-actions{display:flex;gap:10px;padding:0 20px 20px;}
+.user-card-actions .btn{flex:1;}
+.user-card-actions .btn-ghost{border-color:rgba(255,255,255,.16);color:var(--text);}
+.approval-card{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;}
+.approval-info{font-size:12px;color:var(--text);}
+.approval-info b{color:var(--white);}
+.approval-info .meta{color:var(--muted);font-size:10.5px;margin-top:3px;}
+.approval-actions{display:flex;gap:8px;flex-shrink:0;}
+.input-group{margin-bottom:16px;}
+.input-group label{display:block;font-size:9.5px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:5px;font-weight:700;}
+input,select,textarea{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;outline:none;}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--glow);}
+input::placeholder{color:var(--muted);}
+.modal{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);z-index:200;align-items:center;justify-content:center;}
+.modal.open{display:flex;}
+.modal-content{background:var(--surface);border:1px solid var(--border);border-radius:14px;width:90%;max-width:500px;max-height:80vh;overflow-y:auto;padding:24px;}
+.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;border-bottom:1px solid var(--border);padding-bottom:12px;}
+.modal-header h2{font-size:16px;color:var(--white);}
+.close-btn{background:none;border:none;color:var(--text);font-size:24px;cursor:pointer;}
+.chart-container{position:relative;height:250px;margin-bottom:20px;}
+.toolbar{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
+.toolbar input{flex:1;min-width:160px;}
+table{width:100%;border-collapse:collapse;font-size:12px;}
+th{text-align:left;padding:9px 13px;font-size:9.5px;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);font-weight:700;border-bottom:1px solid var(--border);}
+td{padding:11px 13px;border-bottom:1px solid rgba(28,48,96,.4);vertical-align:middle;}
+tr:hover td{background:rgba(74,143,245,.04);}
+.qr-container{text-align:center;padding:12px;background:var(--bg);border-radius:8px;display:inline-block;}
+#qrCanvas{width:120px;height:120px;}
+.qr-label{background:#fff;border-radius:12px;padding:16px 16px 10px;text-align:center;color:#0e1a33;margin-bottom:12px;}
+.qr-product-img{width:110px;height:110px;object-fit:cover;border-radius:8px;border:1px solid #dde4f0;margin:0 auto 10px;display:block;}
+.qr-label .qr-container{background:#fff;padding:8px;}
+.qr-info{font-size:11px;text-align:left;margin-top:12px;}
+.qr-info-name{font-size:14px;font-weight:800;color:#0f2d6b;text-align:center;margin-bottom:8px;}
+.qr-info-row{display:flex;justify-content:space-between;gap:8px;padding:3px 0;border-bottom:1px dashed #dde4f0;}
+.qr-info-row span{color:#5b6b8c;}
+.qr-info-row strong{font-family:monospace;font-size:10px;word-break:break-all;text-align:right;}
+.toast{position:fixed;bottom:20px;right:20px;padding:12px 16px;background:var(--success);color:#fff;border-radius:8px;font-size:12px;z-index:300;animation:slideIn .3s ease;}
+@keyframes slideIn{from{transform:translateX(100%);opacity:0;}to{transform:translateX(0);opacity:1;}}
+.image-upload{position:relative;display:inline-block;}
+.image-preview{width:80px;height:80px;border-radius:8px;border:1px solid var(--border);object-fit:cover;display:block;}
+.user-avatar{width:32px;height:32px;border-radius:8px;background:var(--accent);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:12px;}
+
+/* Theme Toggle */
+.theme-toggle{background:var(--surface2);border:1px solid var(--border);color:var(--text);cursor:pointer;width:34px;height:34px;border-radius:8px;font-size:15px;display:flex;align-items:center;justify-content:center;transition:all .2s;}
+.theme-toggle:hover{background:var(--surface3);border-color:var(--accent);}
+
+/* Logout Button (adapted from user CSS to InventIQ palette) */
+.logoutButton{
+  --figure-duration:100ms;--transform-figure:none;--walking-duration:100ms;
+  --transform-arm1:none;--transform-wrist1:none;--transform-arm2:none;--transform-wrist2:none;
+  --transform-leg1:none;--transform-calf1:none;--transform-leg2:none;--transform-calf2:none;
+  background:none;border:0;color:var(--text);cursor:pointer;display:block;
+  font-family:'Plus Jakarta Sans',sans-serif;font-size:12px;font-weight:700;height:40px;
+  outline:none;padding:0 0 0 18px;perspective:100px;position:relative;text-align:left;
+  width:118px;-webkit-tap-highlight-color:transparent;border-radius:8px;overflow:hidden;
+}
+.logoutButton::before{background-color:var(--surface2);border-radius:8px;content:'';display:block;height:100%;left:0;position:absolute;top:0;transform:none;transition:transform 50ms ease;width:100%;z-index:2;}
+.logoutButton:hover .door{transform:rotateY(20deg);}
+.logoutButton:active::before{transform:scale(.96);}
+.logoutButton:active .door{transform:rotateY(28deg);}
+.logoutButton.clicked::before{transform:none;}
+.logoutButton.clicked .door{transform:rotateY(35deg);}
+.logoutButton.door-slammed .door{transform:none;transition:transform 100ms ease-in 250ms;}
+.logoutButton.falling{animation:lb-shake 200ms linear;}
+.logoutButton.falling .bang{animation:lb-flash 300ms linear;}
+.logoutButton.falling .figure{
+  animation:lb-spin 1000ms infinite linear;bottom:-1080px;opacity:0;right:1px;
+  transition:transform calc(var(--figure-duration) * 1ms) linear,
+    bottom calc(var(--figure-duration) * 1ms) cubic-bezier(0.7,0.1,1,1) 100ms,
+    opacity calc(var(--figure-duration) * 0.25ms) linear calc(var(--figure-duration) * 0.75ms);
+  z-index:1;
+}
+.logoutButton .button-text{color:var(--text);font-weight:700;position:relative;z-index:10;}
+.logoutButton svg{display:block;position:absolute;}
+.logoutButton .figure{bottom:5px;fill:var(--accent2);right:18px;transform:var(--transform-figure);transition:transform calc(var(--figure-duration) * 1ms) cubic-bezier(0.2,0.1,0.80,0.9);width:26px;z-index:4;}
+.logoutButton .door,.logoutButton .doorway{bottom:4px;fill:var(--text);right:12px;width:28px;}
+.logoutButton .door{transform:rotateY(20deg);transform-origin:100% 50%;transform-style:preserve-3d;transition:transform 200ms ease;z-index:5;}
+.logoutButton .door path{fill:var(--accent);stroke:var(--accent);stroke-width:4;}
+.logoutButton .doorway{z-index:3;}
+.logoutButton .bang{opacity:0;}
+.logoutButton .arm1,.logoutButton .wrist1,.logoutButton .arm2,.logoutButton .wrist2,
+.logoutButton .leg1,.logoutButton .calf1,.logoutButton .leg2,.logoutButton .calf2{transition:transform calc(var(--walking-duration) * 1ms) ease-in-out;}
+.logoutButton .arm1{transform:var(--transform-arm1);transform-origin:52% 45%;}
+.logoutButton .wrist1{transform:var(--transform-wrist1);transform-origin:59% 55%;}
+.logoutButton .arm2{transform:var(--transform-arm2);transform-origin:47% 43%;}
+.logoutButton .wrist2{transform:var(--transform-wrist2);transform-origin:35% 47%;}
+.logoutButton .leg1{transform:var(--transform-leg1);transform-origin:47% 64.5%;}
+.logoutButton .calf1{transform:var(--transform-calf1);transform-origin:55.5% 71.5%;}
+.logoutButton .leg2{transform:var(--transform-leg2);transform-origin:43% 63%;}
+.logoutButton .calf2{transform:var(--transform-calf2);transform-origin:41.5% 73%;}
+@keyframes lb-spin{from{transform:rotate(0deg) scale(0.94);}to{transform:rotate(359deg) scale(0.94);}}
+@keyframes lb-shake{0%{transform:rotate(-1deg);}50%{transform:rotate(2deg);}100%{transform:rotate(-1deg);}}
+@keyframes lb-flash{0%{opacity:0.4;}100%{opacity:0;}}
+</style>
+<style>
+.scroll-btn{position:fixed;bottom:28px;right:28px;width:44px;height:44px;border-radius:10px;background:var(--accent);color:#fff;display:none;align-items:center;justify-content:center;font-size:20px;border:none;cursor:pointer;box-shadow:0 6px 18px rgba(74,143,245,.2);z-index:400;}
+.scroll-btn:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(74,143,245,.28);}
+.scroll-btn:focus{outline:2px solid rgba(125,184,255,.3)}
+</style>
+</head>
+<body>
+<div class="container">
+<aside class="sidebar">
+  <div class="sidebar-item active" onclick="switchTab('dashboard', this)" title="Dashboard">📊</div>
+  <div class="sidebar-item" onclick="switchTab('inventory', this)" title="Inventory">📦</div>
+  <div class="sidebar-item" onclick="switchTab('equipment', this)" title="Equipment">🖥️</div>
+  <div class="sidebar-item" onclick="switchTab('maintenance', this)" title="Maintenance">🔧</div>
+  <div class="sidebar-item" onclick="switchTab('history', this)" title="History">📋</div>
+  <div class="sidebar-item" onclick="switchTab('orders', this)" title="Orders">🛒</div>
+  <div class="sidebar-item" onclick="switchTab('documents', this)" title="Documents">📄</div>
+  <div class="sidebar-item" onclick="switchTab('users', this)" title="Users">👥</div>
+  <div class="sidebar-item" onclick="switchTab('settings', this)" title="Settings">⚙️</div>
+</aside>
+<div class="main-content">
+<header>
+  <div class="logo">
+    <div class="logo-icon">📦</div>
+    <h1>Invent<span>IQ</span> Pro</h1>
+  </div>
+  <div class="header-right">
+    <button class="cloud-btn" id="cloudBtn" onclick="driveButton()" title="Google Drive sync">☁️ <span id="cloudLabel">Drive</span></button>
+    <button class="save-btn" onclick="saveBackupFile()" title="Save everything to a .json file (Ctrl+S)">💾 <span>Save</span></button>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">🌙</button>
+  </div>
+</header>
+
+<!-- DASHBOARD -->
+<div class="page active" id="dashboard">
+  <div class="card">
+    <div class="card-title">Overview</div>
+    <div class="grid-3">
+      <div class="stat-box">
+        <div class="stat-label">Total Devices</div>
+        <div class="stat-value" id="stat-total">0</div>
+        <div class="stat-change">↑ 12 this month</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Available</div>
+        <div class="stat-value" id="stat-avail" style="color:var(--success)">0</div>
+        <div class="stat-change" style="color:var(--success)">Ready</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Assigned</div>
+        <div class="stat-value" id="stat-assigned" style="color:var(--warn)">0</div>
+        <div class="stat-change" style="color:var(--warn)">In use</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Pending Approval</div>
+        <div class="stat-value" id="stat-pending" style="color:#a78bfa">0</div>
+        <div class="stat-change" style="color:#a78bfa">Awaiting sign-off</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Broken</div>
+        <div class="stat-value" id="stat-broken" style="color:var(--danger)">0</div>
+        <div class="stat-change" style="color:var(--danger)">Need repair</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Maintenance</div>
+        <div class="stat-value" id="stat-maint" style="color:#fbbf24">0</div>
+        <div class="stat-change" style="color:#fbbf24">Scheduled</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Total Value</div>
+        <div class="stat-value" id="stat-value" style="color:var(--accent2)">0 MAD</div>
+        <div class="stat-change">Assets</div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">Device Status Distribution</div>
+      <div class="chart-container">
+        <canvas id="statusChart"></canvas>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Device Type Breakdown</div>
+      <div class="chart-container">
+        <canvas id="typeChart"></canvas>
+      </div>
+    </div>
+  </div>
+  
+  <div class="card">
+    <div class="card-title">Recent Activity</div>
+    <table>
+      <thead>
+        <tr><th>Action</th><th>Device</th><th>User</th><th>Time</th></tr>
+      </thead>
+      <tbody id="recentActivityTable">
+        <tr><td colspan="4" style="text-align:center;color:var(--muted);">No recent activity</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- INVENTORY -->
+<div class="page" id="inventory">
+  <div class="card">
+    <div class="card-title">Device Inventory</div>
+    <div class="toolbar">
+      <input type="text" id="invSearch" placeholder="Search devices..." onkeyup="filterInventory()">
+      <select id="invFilter" onchange="filterInventory()">
+        <option value="">All Status</option>
+        <option value="available">Available</option>
+        <option value="assigned">Assigned</option>
+        <option value="pending">Pending Approval</option>
+        <option value="broken">Broken</option>
+        <option value="maintenance">Maintenance</option>
+      </select>
+      <select id="invTypeFilter" onchange="filterInventory()">
+        <option value="">All Types</option>
+        <option value="laptop">Laptop</option>
+        <option value="desktop">Desktop</option>
+        <option value="monitor">Monitor</option>
+        <option value="printer">Printer</option>
+        <option value="network">Network</option>
+      </select>
+      <button class="btn btn-primary btn-sm" onclick="openAddDevice()">+ Add Device</button>
+      <button class="btn btn-ghost btn-sm" onclick="exportInventory()">Export</button>
+    </div>
+    <div style="overflow-x:auto;">
+      <table>
+        <thead>
+          <tr><th>Serial</th><th>Name</th><th>Type</th><th>Status</th><th>Assigned To</th><th>Value</th><th>Image</th><th>Actions</th></tr>
+        </thead>
+        <tbody id="inventoryTable">
+          <tr><td colspan="8" style="text-align:center;color:var(--muted);">No devices. Add one to start.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- EQUIPMENT ASSIGNMENT -->
+<div class="page" id="equipment">
+  <div class="card">
+    <div class="card-title">Pending Approvals</div>
+    <div id="pendingApprovalsList">
+      <p style="color:var(--muted);font-size:12px;">No pending approvals</p>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">Equipment Assignment</div>
+    <button class="btn btn-primary" onclick="openAssignDialog()">+ Assign Equipment</button>
+    <div id="equipmentList" style="margin-top:16px;"></div>
+  </div>
+</div>
+
+<!-- MAINTENANCE -->
+<div class="page" id="maintenance">
+  <div class="card">
+    <div class="card-title">Maintenance Schedule</div>
+    <button class="btn btn-primary" onclick="openMaintDialog()">+ Schedule Maintenance</button>
+    <div style="margin-top:16px;overflow-x:auto;">
+      <table>
+        <thead>
+          <tr><th>Device</th><th>Schedule</th><th>Type</th><th>Status</th><th>Assigned To</th><th>Actions</th></tr>
+        </thead>
+        <tbody id="maintTable">
+          <tr><td colspan="6" style="text-align:center;color:var(--muted);">No scheduled maintenance</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- HISTORY -->
+<div class="page" id="history">
+  <div class="card">
+    <div class="card-title">Audit Trail</div>
+    <div class="toolbar">
+      <input type="text" id="histSearch" placeholder="Search logs..." onkeyup="filterHistory()">
+      <select id="histFilter" onchange="filterHistory()">
+        <option value="">All Actions</option>
+        <option value="add">Added</option>
+        <option value="assign">Assigned</option>
+        <option value="update">Updated</option>
+        <option value="delete">Deleted</option>
+      </select>
+    </div>
+    <div style="overflow-x:auto;">
+      <table>
+        <thead>
+          <tr><th>Timestamp</th><th>User</th><th>Action</th><th>Device</th><th>Details</th></tr>
+        </thead>
+        <tbody id="historyTable">
+          <tr><td colspan="5" style="text-align:center;color:var(--muted);">No history records</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ORDERS -->
+<div class="page" id="orders">
+  <div class="card">
+    <div class="card-title">Purchase Orders</div>
+    <button class="btn btn-primary" onclick="openOrderDialog()">+ New Order</button>
+    <div id="ordersList" style="margin-top:16px;"></div>
+  </div>
+</div>
+
+<!-- USERS -->
+<div class="page" id="users">
+  <div class="card">
+    <div class="card-title">Users & Roles</div>
+    <button class="btn btn-primary" onclick="openUserDialog()">+ Add User</button>
+    <div id="usersTable" class="user-cards"></div>
+  </div>
+</div>
+
+<!-- SETTINGS -->
+<div class="page" id="documents">
+  <div class="card">
+    <div class="card-title">Important Documents</div>
+    <div class="toolbar">
+      <input type="text" id="docSearch" placeholder="Search documents..." oninput="renderDocuments()">
+      <select id="docFilter" onchange="renderDocuments()"><option value="">All categories</option></select>
+      <div class="doc-add"><span>Add as</span><select id="docUploadCat" title="Category for the files you add"></select>
+      <button class="btn btn-primary btn-sm" onclick="document.getElementById('docFile').click()">+ Add files</button></div>
+      <input type="file" id="docFile" multiple accept=".pdf,application/pdf,image/*,.doc,.docx,.xls,.xlsx" style="display:none" onchange="addDocuments(this.files);this.value='';">
+    </div>
+    <div id="docDrop" class="doc-drop">Drop PDF files here — or use “+ Add files”. They’re kept on this device and copied to Google Drive when it’s connected.</div>
+    <div id="docList" class="doc-list"></div>
+  </div>
+</div>
+<div class="page" id="settings">
+  <div class="card">
+    <div class="card-title">System Settings</div>
+    <div class="input-group">
+      <label>Company Name</label>
+      <input type="text" id="settingsCompany" value="Your Company">
+    </div>
+    <div class="input-group">
+      <label>Default Currency</label>
+      <select id="settingsCurrency">
+        <option value="MAD">MAD (Moroccan Dirham)</option>
+        <option value="USD">USD (US Dollar)</option>
+        <option value="EUR">EUR (Euro)</option>
+      </select>
+    </div>
+    <button class="btn btn-primary" onclick="saveSettings()">Save Settings</button>
+  </div>
+  <div class="card">
+    <div class="card-title">Google Drive Sync</div>
+    <p class="set-note">Keeps the same data and documents on your phone and PC. Everything is saved in a <b>“InventIQ Pro”</b> folder in your Google Drive (visible in the Drive app).</p>
+    <div class="input-group">
+      <label>Google OAuth Client ID</label>
+      <input type="text" id="driveClientId" placeholder="xxxxxxxx.apps.googleusercontent.com">
+    </div>
+    <label class="set-check"><input type="checkbox" id="driveAuto" checked> Save to Drive automatically after every change</label>
+    <div id="driveStatus" class="set-note" style="margin:10px 0;"></div>
+    <button class="btn btn-primary" onclick="driveSaveSettingsAndConnect()">Connect Google Drive</button>
+    <button class="btn btn-ghost" onclick="driveSyncNow({interactive:true})">Sync now</button>
+    <button class="btn btn-ghost" onclick="driveDisconnect()">Disconnect</button>
+  </div>
+  <div class="card" id="installCard">
+    <div class="card-title">Install App</div>
+    <p class="set-note" id="installNote">Open this app from its web link (https) to install it on your phone or PC.</p>
+    <button class="btn btn-primary" id="installBtn" style="display:none" onclick="installApp()">📲 Install InventIQ Pro</button>
+  </div>
+  <div class="card">
+    <div class="card-title">Data Export</div>
+    <button class="btn btn-ghost" onclick="saveBackupFile()">💾 Save backup (.json)</button>
+    <button class="btn btn-ghost" onclick="importData()">Import JSON</button>
+    <input type="file" id="importFile" style="display:none;" accept=".json,application/json,.txt">
+  </div>
+</div>
+</div>
+</div>
+
+<!-- MODALS -->
+<div id="deviceModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2 id="deviceModalTitle">Add Device</h2>
+      <button class="close-btn" onclick="closeModal('deviceModal')">×</button>
+    </div>
+    <div class="input-group">
+      <label>Serial Number</label>
+      <input type="text" id="devSerial" placeholder="e.g., LAP-2024-001">
+    </div>
+    <div class="input-group">
+      <label>Device Name</label>
+      <input type="text" id="devName" placeholder="e.g., MacBook Pro 16">
+    </div>
+    <div class="input-group">
+      <label>Type</label>
+      <select id="devType">
+        <option value="laptop">Laptop</option>
+        <option value="desktop">Desktop</option>
+        <option value="monitor">Monitor</option>
+        <option value="printer">Printer</option>
+        <option value="network">Network</option>
+      </select>
+    </div>
+    <div class="input-group">
+      <label>Value (MAD)</label>
+      <input type="number" id="devValue" placeholder="0" min="0">
+    </div>
+    <div class="input-group">
+      <label>Image</label>
+      <input type="file" id="devImage" accept="image/*">
+    </div>
+    <div class="input-group">
+      <label>Status</label>
+      <select id="devStatus">
+        <option value="available">Available</option>
+        <option value="assigned">Assigned</option>
+        <option value="broken">Broken</option>
+        <option value="maintenance">Maintenance</option>
+      </select>
+    </div>
+    <button class="btn btn-primary" onclick="saveDevice()" style="width:100%;">Save Device</button>
+  </div>
+</div>
+
+<div id="assignModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>Assign Equipment</h2>
+      <button class="close-btn" onclick="closeModal('assignModal')">×</button>
+    </div>
+    <div class="input-group">
+      <label>Device</label>
+      <select id="assignDevice"></select>
+    </div>
+    <div class="input-group">
+      <label>Assigned To (Email)</label>
+      <input type="email" id="assignEmail" placeholder="person@company.com">
+    </div>
+    <div class="input-group">
+      <label>Name <span style="text-transform:none;letter-spacing:0;font-weight:400">(optional)</span></label>
+      <input type="text" id="assignName" placeholder="e.g. Ayoub Haina">
+    </div>
+    <div class="input-group">
+      <label>Approver Email</label>
+      <input type="email" id="assignApproverEmail" placeholder="approver@company.com">
+    </div>
+    <div class="input-group">
+      <label>Notes</label>
+      <textarea id="assignNotes" placeholder="Assignment details..."></textarea>
+    </div>
+    <button class="btn btn-success" onclick="saveAssignment()" style="width:100%;">Submit for Approval</button>
+  </div>
+</div>
+
+<div id="maintModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>Schedule Maintenance</h2>
+      <button class="close-btn" onclick="closeModal('maintModal')">×</button>
+    </div>
+    <div class="input-group">
+      <label>Device</label>
+      <select id="maintDevice"></select>
+    </div>
+    <div class="input-group">
+      <label>Maintenance Type</label>
+      <select id="maintType">
+        <option value="preventive">Preventive</option>
+        <option value="corrective">Corrective</option>
+        <option value="inspection">Inspection</option>
+      </select>
+    </div>
+    <div class="input-group">
+      <label>Scheduled Date</label>
+      <input type="date" id="maintDate">
+    </div>
+    <div class="input-group">
+      <label>Assigned To</label>
+      <select id="maintUser"></select>
+    </div>
+    <button class="btn btn-success" onclick="saveMaintenance()" style="width:100%;">Schedule</button>
+  </div>
+</div>
+
+<div id="orderModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>Purchase Order</h2>
+      <button class="close-btn" onclick="closeModal('orderModal')">×</button>
+    </div>
+    <div class="input-group">
+      <label>Item Name</label>
+      <input type="text" id="orderName" placeholder="Device name">
+    </div>
+    <div class="input-group">
+      <label>Quantity</label>
+      <input type="number" id="orderQty" value="1" min="1">
+    </div>
+    <div class="input-group">
+      <label>Unit Price (MAD)</label>
+      <input type="number" id="orderPrice" placeholder="0" min="0">
+    </div>
+    <div class="input-group">
+      <label>Supplier</label>
+      <input type="text" id="orderSupplier" placeholder="Supplier name">
+    </div>
+    <button class="btn btn-primary" onclick="saveOrder()" style="width:100%;">Save Order</button>
+  </div>
+</div>
+
+<div id="userModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>Add User</h2>
+      <button class="close-btn" onclick="closeModal('userModal')">×</button>
+    </div>
+    <div class="input-group">
+      <label>Full Name</label>
+      <input type="text" id="userName" placeholder="User name">
+    </div>
+    <div class="input-group">
+      <label>Email</label>
+      <input type="email" id="userEmail" placeholder="user@example.com">
+    </div>
+    <div class="input-group">
+      <label>Role</label>
+      <select id="userRole">
+        <option value="admin">Admin</option>
+        <option value="it">IT Staff</option>
+        <option value="viewer">Viewer</option>
+      </select>
+    </div>
+    <button class="btn btn-primary" onclick="saveUser()" style="width:100%;">Add User</button>
+  </div>
+</div>
+
+<script>
+const allowedAccounts=[
+  {email:'M.amar@dawec.ma',name:'M. Amar',role:'superadmin'}
+];
+let devices=[],assignments=[],maintenance=[],orders=[],users=[],auditLog=[],docs=[],currentUser='Guest',currentRole='guest',currentEmail='';
+let appSettings={company:'Your Company',currency:'MAD'};
+
+// EmailJS configuration — create a free account at https://www.emailjs.com then fill these in.
+// Template placeholders used: {{to_email}}, {{to_name}}, {{from_name}}, {{subject}}, {{message}}
+const EMAILJS_CONFIG={
+  serviceId:'YOUR_SERVICE_ID',      // Email Services -> Service ID
+  templateId:'YOUR_TEMPLATE_ID',    // Email Templates -> Template ID
+  publicKey:'YOUR_PUBLIC_KEY',      // Account -> General -> Public Key
+  fromName:'InventIQ Pro'
+};
+function emailjsReady(){
+  return window.emailjs
+    && EMAILJS_CONFIG.serviceId && EMAILJS_CONFIG.serviceId.indexOf('YOUR_')!==0
+    && EMAILJS_CONFIG.templateId && EMAILJS_CONFIG.templateId.indexOf('YOUR_')!==0
+    && EMAILJS_CONFIG.publicKey && EMAILJS_CONFIG.publicKey.indexOf('YOUR_')!==0;
+}
+function sendEmail(toEmail,toName,subject,message){
+  if(!emailjsReady()){
+    const u='mailto:'+encodeURIComponent(toEmail)+'?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(message);
+    if(confirm('EmailJS is not configured yet. Open your email client to send manually?')) window.location.href=u;
+    return;
+  }
+  emailjs.send(EMAILJS_CONFIG.serviceId,EMAILJS_CONFIG.templateId,{
+    to_email:toEmail,
+    to_name:toName||'',
+    from_name:EMAILJS_CONFIG.fromName,
+    subject:subject,
+    message:message
+  },EMAILJS_CONFIG.publicKey)
+    .then(function(){notify('Email sent to '+toEmail);},function(err){console.error(err);notify('Email failed — check EmailJS config');});
+}
+function init(){
+  loadData();
+  loadAuth();
+  loadSettings();
+  initializeUsers();
+  updateAuthDisplay();
+  {
+    updateDashboard();
+    renderInventory();
+    renderPendingApprovals();
+    renderMaintenance();
+    renderOrders();
+  }
+}
+function loadData(){
+  const saved=localStorage.getItem('inventiq-pro');
+  if(saved){
+    const data=JSON.parse(saved);
+    devices=data.devices||[];assignments=data.assignments||[];maintenance=data.maintenance||[];
+    orders=data.orders||[];users=data.users||[];auditLog=data.auditLog||[];docs=data.docs||[];
+    purgeRemovedAccounts();
+  } else {
+    users = allowedAccounts.map((acct,index)=>({
+      id:'u'+(index+1),
+      name:acct.name,
+      email:acct.email,
+      role:acct.role,
+      lastLogin:new Date().toLocaleString()
+    }));
+  }
+}
+// Accounts removed from the app — wiped from saved users on load
+const REMOVED_ACCOUNTS=['a.mrougui-ext@dawec.ma'];
+function purgeRemovedAccounts(){
+  const before=users.length;
+  users=users.filter(u=>!REMOVED_ACCOUNTS.includes(String(u.email||'').toLowerCase()) && !/mrougui/i.test(u.name||''));
+  // keep M. Amar in sync with his current role
+  users.forEach(u=>{const a=allowedAccounts.find(x=>x.email.toLowerCase()===String(u.email||'').toLowerCase());if(a)u.role=a.role;});
+  if(users.length!==before) save();
+}
+function loadAuth(){
+  // No sign-in screen: the app always opens with full rights
+  currentEmail='';
+  currentUser='Admin';
+  currentRole='superadmin';
+  localStorage.removeItem('inventiq-auth');
+}
+function saveAuth(){}
+function updateAuthDisplay(){
+  const userLabel=document.getElementById('currentUser');
+  const roleLabel=document.getElementById('userRoleBadge');
+  if(userLabel) userLabel.textContent=currentUser;
+  if(roleLabel) roleLabel.textContent='('+(currentRole==='superadmin'?'Full Admin':currentRole==='admin'?'Admin':'Guest')+')';
+}
+function save(){
+  localStorage.setItem('inventiq-pro',JSON.stringify({devices,assignments,maintenance,orders,users,auditLog,docs}));
+  localStorage.setItem('inventiq-lastchange',String(Date.now()));
+  if(typeof onDataSaved==='function') onDataSaved();
+}
+function formatRoleLabel(role){
+  return role === 'superadmin' ? 'Full Admin' : role === 'admin' ? 'Admin' : role === 'it' ? 'IT Staff' : role === 'viewer' ? 'Viewer' : role.charAt(0).toUpperCase() + role.slice(1);
+}
+function initializeUsers(){
+  const select2=document.getElementById('maintUser');
+  const cardContainer=document.getElementById('usersTable');
+  const optionsHtml = users.map(u=>`<option value="${u.id}">${u.name}</option>`).join('');
+  if(select2) select2.innerHTML = optionsHtml;
+  cardContainer.innerHTML = users.map(u => {
+    const initials = u.name.split(' ').map(part => part[0]).slice(0,2).join('').toUpperCase();
+    const roleLabel = formatRoleLabel(u.role || 'User');
+    const department = u.department || (u.role === 'admin' ? 'Finance' : u.role === 'it' ? 'IT Operations' : 'Business Services');
+    const location = u.location || 'Casablanca';
+    return `
+      <div class="user-card">
+        <div class="user-card-header">
+          <div class="user-card-avatar">${initials}</div>
+          <div>
+            <div class="user-card-name">${u.name}</div>
+            <div class="user-card-role">${roleLabel}</div>
+          </div>
+        </div>
+        <div class="user-card-body">
+          <div class="user-card-meta">
+            <div><span>Department</span><strong>${department}</strong></div>
+            <div><span>Location</span><strong>${location}</strong></div>
+            <div><span>Email</span><strong>${u.email}</strong></div>
+            <div><span>Last Login</span><strong>${u.lastLogin || '—'}</strong></div>
+          </div>
+        </div>
+        <div class="user-card-actions">
+          <button class="btn btn-sm btn-ghost" onclick="editUser('${u.id}')">Edit</button>
+          <button class="btn btn-sm btn-danger" onclick="deleteUser('${u.id}')">Delete</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+function switchTab(tabName, el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.sidebar-item').forEach(s=>s.classList.remove('active'));
+  document.getElementById(tabName).classList.add('active');
+  if(el) el.classList.add('active');
+  if(tabName==='dashboard') updateDashboard();
+}
+function updateDashboard(){
+  const avail=devices.filter(d=>d.status==='available').length;
+  const assigned=devices.filter(d=>d.status==='assigned').length;
+  const pending=devices.filter(d=>d.status==='pending').length;
+  const broken=devices.filter(d=>d.status==='broken').length;
+  const maint=maintenance.length;
+  const total=devices.length;
+  const value=devices.reduce((s,d)=>s+(d.value||0),0);
+  document.getElementById('stat-total').textContent=total;
+  document.getElementById('stat-avail').textContent=avail;
+  document.getElementById('stat-assigned').textContent=assigned;
+  document.getElementById('stat-pending').textContent=pending;
+  document.getElementById('stat-broken').textContent=broken;
+  document.getElementById('stat-maint').textContent=maint;
+  document.getElementById('stat-value').textContent=value.toLocaleString()+' '+appSettings.currency;
+  renderStatusChart();
+  renderTypeChart();
+  renderRecentActivity();
+  renderPendingApprovals();
+}
+function isLight(){return (document.documentElement.dataset.theme||'dark')==='light';}
+function renderStatusChart(){
+  const ctx=document.getElementById('statusChart');
+  if(ctx.chart) ctx.chart.destroy();
+  const avail=devices.filter(d=>d.status==='available').length;
+  const assigned=devices.filter(d=>d.status==='assigned').length;
+  const pending=devices.filter(d=>d.status==='pending').length;
+  const broken=devices.filter(d=>d.status==='broken').length;
+  const maint=devices.filter(d=>d.status==='maintenance').length;
+  ctx.chart=new Chart(ctx,{
+    type:'doughnut',
+    data:{labels:['Available','Assigned','Pending','Broken','Maintenance'],datasets:[{data:[avail,assigned,pending,broken,maint],backgroundColor:['#2ec47a','#f59e0b','#a78bfa','#f05c6a','#4a8ff5']}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:isLight()?'#1a2a4a':'#dde8ff',font:{size:11}}}}}
+  });
+}
+function renderTypeChart(){
+  const ctx=document.getElementById('typeChart');
+  if(ctx.chart) ctx.chart.destroy();
+  const types=['laptop','desktop','monitor','printer','network'];
+  const counts=types.map(t=>devices.filter(d=>d.type===t).length);
+  ctx.chart=new Chart(ctx,{
+    type:'bar',
+    data:{labels:types.map(t=>t.charAt(0).toUpperCase()+t.slice(1)),datasets:[{label:'Count',data:counts,backgroundColor:'#4a8ff5',borderRadius:6}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{color:'#5b6b8c'},grid:{color:isLight()?'#d3ddef':'#1c3060'}},x:{ticks:{color:'#5b6b8c'},grid:{color:isLight()?'#d3ddef':'#1c3060'}}}}
+  });
+}
+function renderRecentActivity(){
+  const table=document.getElementById('recentActivityTable');
+  const recent=auditLog.slice(-5).reverse();
+  if(!recent.length){table.innerHTML='<tr><td colspan="4" style="text-align:center;color:var(--muted);">No recent activity</td></tr>';return;}
+  table.innerHTML=recent.map(log=>`<tr><td>${log.action||''}</td><td>${log.device||''}</td><td>${log.user||''}</td><td>${log.timestamp||''}</td></tr>`).join('');
+}
+function openAddDevice(){
+  document.getElementById('deviceModalTitle').textContent='Add Device';
+  document.getElementById('devSerial').value='';
+  document.getElementById('devName').value='';
+  document.getElementById('devType').value='laptop';
+  document.getElementById('devValue').value='0';
+  document.getElementById('devStatus').value='available';
+  document.getElementById('deviceModal').classList.add('open');
+}
+function saveDevice(){
+  const serial=document.getElementById('devSerial').value.trim();
+  if(!serial){alert('Serial number required');return;}
+  const device={
+    id:'dev'+Date.now(),
+    serial,
+    name:document.getElementById('devName').value||'Unnamed',
+    type:document.getElementById('devType').value,
+    value:parseFloat(document.getElementById('devValue').value)||0,
+    status:document.getElementById('devStatus').value,
+    image:null,
+    dateAdded:new Date().toLocaleString()
+  };
+  const file=document.getElementById('devImage').files[0];
+  if(file){
+    const reader=new FileReader();
+    reader.onload=e=>{device.image=e.target.result;devices.push(device);save();closeModal('deviceModal');renderInventory();updateDashboard();logAction('add',device.name,'Device added');notify('Device added!');};
+    reader.readAsDataURL(file);
+  } else {
+    devices.push(device);save();closeModal('deviceModal');renderInventory();updateDashboard();logAction('add',device.name,'Device added');notify('Device added!');
+  }
+}
+function statusBadgeClass(status){
+  if(status==='available') return 'g';
+  if(status==='assigned') return 'o';
+  if(status==='pending') return 'p';
+  return 'r';
+}
+function assignedToLabel(deviceId){
+  const active=assignments.find(a=>a.deviceId===deviceId&&a.status==='assigned');
+  if(active) return active.userName;
+  const pending=assignments.find(a=>a.deviceId===deviceId&&a.status==='pending');
+  if(pending) return pending.userName+' (pending)';
+  return '—';
+}
+function renderInventory(){
+  const table=document.getElementById('inventoryTable');
+  if(!devices.length){table.innerHTML='<tr><td colspan="8" style="text-align:center;color:var(--muted);">No devices added</td></tr>';return;}
+  table.innerHTML=devices.map(d=>`<tr>
+    <td><code>${d.serial}</code></td>
+    <td>${d.name}</td>
+    <td><span class="badge g">${d.type}</span></td>
+    <td><span class="badge ${statusBadgeClass(d.status)}">${d.status}</span></td>
+    <td>${assignedToLabel(d.id)}</td>
+    <td>${d.value} ${appSettings.currency}</td>
+    <td>${d.image?'<img src="'+d.image+'" style="width:32px;height:32px;border-radius:4px;">':'—'}</td>
+    <td>
+      <button class="btn btn-sm btn-ghost" onclick="generateQR('${d.id}')">QR</button>
+      <button class="btn btn-sm btn-danger" onclick="deleteDevice('${d.id}')">Delete</button>
+    </td>
+  </tr>`).join('');
+}
+function ensureQRCode(callback){
+  if(window.QRCode && typeof QRCode === 'function') return callback();
+  alert('QR library is not loaded. Please reload the page and try again.');
+}
+
+function generateQR(deviceId){
+  const dev=devices.find(d=>d.id===deviceId);
+  if(!dev) return;
+  const info={
+    Serial:dev.serial,
+    Type:dev.type,
+    Status:dev.status,
+    Value:(dev.value||0)+' '+appSettings.currency,
+    'Assigned to':assignedToLabel(dev.id),
+    Added:dev.dateAdded||'',
+    ID:dev.id
+  };
+  let qrData=JSON.stringify(Object.assign({Name:dev.name},info));
+  // QR codes have a hard byte limit — if the full info is too long, fall back to a compact payload.
+  if(qrData.length>900){qrData=JSON.stringify({Name:dev.name,Serial:dev.serial,ID:dev.id});}
+  const modal=document.createElement('div');
+  modal.className='modal open';
+  modal.innerHTML=`<div class="modal-content" style="max-width:380px;text-align:center">
+    <div class="modal-header">
+      <h2>QR Code</h2>
+      <button class="close-btn" onclick="this.closest('.modal').remove()">×</button>
+    </div>
+    <div id="qrLabel" class="qr-label">
+      ${dev.image?'<img id="qrProductImg" src="'+dev.image+'" class="qr-product-img" alt="Product image">':''}
+      <div id="qrContainer" class="qr-container"></div>
+      <div class="qr-info">
+        <div class="qr-info-name">${dev.name}</div>
+        ${Object.keys(info).map(k=>'<div class="qr-info-row"><span>'+k+'</span><strong>'+info[k]+'</strong></div>').join('')}
+      </div>
+    </div>
+    <button class="btn btn-primary" onclick="downloadQR()" style="width:100%;margin-top:12px;">Download Label</button>
+  </div>`;
+  document.body.appendChild(modal);
+  ensureQRCode(()=>{
+    try{
+      const qrContainer = document.getElementById('qrContainer');
+      qrContainer.innerHTML = '';
+      new QRCode(qrContainer, {
+        text: qrData,
+        width: 180,
+        height: 180,
+        correctLevel: QRCode.CorrectLevel.L
+      });
+    }catch(err){
+      console.error(err);
+      try{
+        const qrContainer = document.getElementById('qrContainer');
+        qrContainer.innerHTML = '';
+        new QRCode(qrContainer, {
+          text: JSON.stringify({Name:dev.name,Serial:dev.serial,ID:dev.id}),
+          width: 180,
+          height: 180,
+          correctLevel: QRCode.CorrectLevel.L
+        });
+      }catch(err2){
+        console.error(err2);
+        alert('QR data is too long — please shorten the device name or serial.');
+      }
+    }
+  });
+}
+function downloadQR(){
+  const label=document.getElementById('qrLabel');
+  const qrContainer=document.getElementById('qrContainer');
+  const qrEl=qrContainer&&(qrContainer.querySelector('canvas')||qrContainer.querySelector('img'));
+  if(!label||!qrEl) return alert('QR image not ready yet.');
+
+  const productImgEl=document.getElementById('qrProductImg');
+  const infoRows=label.querySelectorAll('.qr-info-row');
+  const nameEl=label.querySelector('.qr-info-name');
+  const nameText=nameEl?nameEl.textContent:'';
+
+  const w=360,pad=16;
+  const prodH=productImgEl?110:0;
+  const qrSize=180;
+  const infoH=infoRows.length*18+34;
+  const h=pad*2+prodH+qrSize+infoH+18;
+  const cv=document.createElement('canvas');
+  cv.width=w;cv.height=h;
+  const c=cv.getContext('2d');
+  c.fillStyle='#ffffff';c.fillRect(0,0,w,h);
+  c.fillStyle='#0f2d6b';c.font='bold 15px Arial';c.textAlign='center';
+  c.fillText(nameText,w/2,pad+12);
+
+  const qrImg=new Image();
+  qrImg.onload=function(){
+    if(productImgEl){
+      const pi=new Image();
+      pi.onload=function(){drawLabel(c,cv,w,pi,qrImg,infoRows,pad,prodH,qrSize,infoH);};
+      pi.onerror=function(){drawLabel(c,cv,w,null,qrImg,infoRows,pad,prodH,qrSize,infoH);};
+      pi.src=productImgEl.src;
+    }else{
+      drawLabel(c,cv,w,null,qrImg,infoRows,pad,prodH,qrSize,infoH);
+    }
+  };
+  qrImg.onerror=function(){alert('Could not render QR.');};
+  qrImg.src=qrEl.tagName==='IMG'?qrEl.src:qrEl.toDataURL();
+}
+function shortText(v,n){v=String(v);return v.length>n?v.slice(0,n-1)+'…':v;}
+function drawLabel(c,cv,w,prodImg,qrImg,infoRows,pad,prodH,qrSize,infoH){
+  let y=pad+20;
+  if(prodImg){
+    c.drawImage(prodImg,(w-110)/2,y,110,110);
+    y+=110+6;
+  }
+  c.drawImage(qrImg,(w-qrSize)/2,y,qrSize,qrSize);
+  y+=qrSize+12;
+  c.font='10px Arial';
+  infoRows.forEach(function(row){
+    const k=(row.querySelector('span')||{textContent:''}).textContent;
+    const v=(row.querySelector('strong')||{textContent:''}).textContent;
+    c.fillStyle='#5b6b8c';c.textAlign='left';
+    c.fillText(k,pad,y);
+    c.fillStyle='#0e1a33';c.font='10px monospace';c.textAlign='right';
+    c.fillText(shortText(v,34),w-pad,y);
+    c.font='10px Arial';
+    y+=18;
+  });
+  const link=document.createElement('a');
+  link.href=cv.toDataURL('image/png');
+  link.download='device-label.png';
+  link.click();
+}
+function deleteDevice(id){
+  if(!confirm('Delete device?')) return;
+  devices=devices.filter(d=>d.id!==id);
+  assignments=assignments.filter(a=>a.deviceId!==id);
+  maintenance=maintenance.filter(m=>m.deviceId!==id);
+  save();renderInventory();renderPendingApprovals();updateDashboard();notify('Device deleted');
+}
+function filterInventory(){
+  const search=document.getElementById('invSearch').value.toLowerCase();
+  const status=document.getElementById('invFilter').value;
+  const type=document.getElementById('invTypeFilter').value;
+  const filtered=devices.filter(d=>(d.name.toLowerCase().includes(search)||d.serial.toLowerCase().includes(search))&&(!status||d.status===status)&&(!type||d.type===type));
+  const table=document.getElementById('inventoryTable');
+  table.innerHTML=filtered.map(d=>`<tr>
+    <td><code>${d.serial}</code></td>
+    <td>${d.name}</td>
+    <td><span class="badge g">${d.type}</span></td>
+    <td><span class="badge ${statusBadgeClass(d.status)}">${d.status}</span></td>
+    <td>${assignedToLabel(d.id)}</td>
+    <td>${d.value} ${appSettings.currency}</td>
+    <td>${d.image?'<img src="'+d.image+'" style="width:32px;height:32px;border-radius:4px;">':'—'}</td>
+    <td>
+      <button class="btn btn-sm btn-ghost" onclick="generateQR('${d.id}')">QR</button>
+      <button class="btn btn-sm btn-danger" onclick="deleteDevice('${d.id}')">Delete</button>
+    </td>
+  </tr>`).join('')||'<tr><td colspan="8" style="text-align:center;color:var(--muted);">No devices match filters</td></tr>';
+}
+function exportInventory(){
+  const ws=XLSX.utils.json_to_sheet(devices);
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Inventory');
+  XLSX.writeFile(wb,'inventory-'+new Date().toISOString().slice(0,10)+'.xlsx');
+}
+// Save button: in Chrome/Edge, pick the file once and every later Save overwrites it; otherwise it downloads.
+let backupFileHandle=null;
+async function saveBackupFile(){
+  const text=JSON.stringify({app:'InventIQ Pro',savedAt:new Date().toISOString(),devices,assignments,maintenance,orders,users,auditLog,docs},null,2);
+  const name='inventiq-backup-'+new Date().toISOString().slice(0,10)+'.json';
+  if(window.showSaveFilePicker){
+    try{
+      if(!backupFileHandle){
+        backupFileHandle=await window.showSaveFilePicker({suggestedName:name,types:[{description:'Inventory backup',accept:{'application/json':['.json']}}]});
+      }
+      const w=await backupFileHandle.createWritable();
+      await w.write(text);await w.close();
+      notify('Saved to '+backupFileHandle.name+' ('+devices.length+' devices)');
+      return;
+    }catch(e){
+      if(e&&e.name==='AbortError') return;      // user cancelled
+      console.error(e);backupFileHandle=null;    // fall back to a normal download
+    }
+  }
+  const blob=new Blob([text],{type:'application/json'});
+  const link=document.createElement('a');
+  link.href=URL.createObjectURL(blob);link.download=name;
+  document.body.appendChild(link);link.click();link.remove();
+  setTimeout(()=>URL.revokeObjectURL(link.href),5000);
+  notify('Backup downloaded: '+name);
+}
+document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='s'){e.preventDefault();saveBackupFile();}});
+function exportAllJSON(){
+  const data={devices,assignments,maintenance,orders,users,auditLog,docs};
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const link=document.createElement('a');
+  link.href=URL.createObjectURL(blob);
+  link.download='inventiq-backup-'+new Date().toISOString().slice(0,10)+'.json';
+  document.body.appendChild(link);link.click();link.remove();
+  setTimeout(()=>URL.revokeObjectURL(link.href),5000);
+}
+// Robust JSON import: accepts top-level arrays, single objects, double-encoded JSON,
+// and objects with common keys like devices/inventory/items/users.
+function normalizeImported(){
+  const arr=v=>Array.isArray(v)?v:[];
+  devices=arr(devices).filter(d=>d&&typeof d==='object').map((d,i)=>Object.assign({},d,{
+    id:String(d.id||('dev'+Date.now()+i)),
+    name:String(d.name||d.Name||d.device||d.Device||'Unnamed'),
+    serial:String(d.serial||d.Serial||d.serialNumber||d.SN||''),
+    type:String(d.type||d.Type||'other').toLowerCase(),
+    status:String(d.status||d.Status||'available').toLowerCase(),
+    value:parseFloat(d.value||d.Value)||0
+  }));
+  users=arr(users).filter(u=>u&&typeof u==='object').map((u,i)=>Object.assign({},u,{id:String(u.id||('u'+Date.now()+i)),name:String(u.name||u.email||'User'),email:String(u.email||''),role:String(u.role||'viewer')}));
+  assignments=arr(assignments);maintenance=arr(maintenance);orders=arr(orders);auditLog=arr(auditLog);docs=arr(docs);
+}
+function importData(){
+  const fileInput = document.getElementById('importFile');
+  if(!fileInput) return alert('Import input not found');
+  fileInput.value = '';
+  fileInput.click();
+  fileInput.onchange = async (e) => {
+    const file = e.target.files[0];
+    if(!file) return;
+    try{
+      let text = await file.text();
+      text = text.replace(/^\uFEFF/,'').trim();          // strip BOM (files saved by Notepad/Excel)
+      let data;
+      try{ data = JSON.parse(text); }
+      catch(pe){
+        const k=text.lastIndexOf('}');                       // tolerate junk after the JSON
+        try{ data = JSON.parse(text.slice(0,k+1)); }
+        catch(pe2){ throw new Error('This file is not valid JSON (it may be incomplete or damaged). Details: '+pe.message); }
+      }
+      // handle double-encoded JSON
+      if(typeof data === 'string'){
+        try{ data = JSON.parse(data); }catch(err){}
+      }
+
+      let accepted = false;
+      function isDeviceLike(obj){ return obj && (obj.serial || obj.id || obj.name || obj.device); }
+      function isUserLike(obj){ return obj && (obj.email || obj.name || obj.role); }
+
+      if(Array.isArray(data)){
+        devices = data; accepted = true;
+      } else if(typeof data === 'object' && data !== null){
+        // Older inventory app save (version / locations / items / workers): convert to this app's format
+        if(Array.isArray(data.locations)){
+          const typeMap={rt:'network',fw:'network',sw:'network',ap:'network',router:'network',switch:'network',pr:'printer',printer:'printer',pc:'desktop',desktop:'desktop',laptop:'laptop',lt:'laptop',mon:'monitor',monitor:'monitor'};
+          const conv=[];
+          data.locations.forEach(loc=>(loc.devices||[]).forEach(x=>{
+            let t=typeMap[String(x.type||'').toLowerCase()]||'network';
+            if(/printer|imprimante/i.test(x.name||'')) t='printer';
+            const st=String(x.status||'').toLowerCase();
+            conv.push({
+              id:String(x.id||('dev'+Date.now()+conv.length)),
+              name:x.name||'Unnamed', serial:x.serial||x.sn||'', type:t,
+              status:/off|down|broken|panne/.test(st)?'broken':/maint/.test(st)?'maintenance':'available',
+              value:parseFloat(x.value)||0,
+              brand:x.brand||'', model:x.model||'', ip:String(x.ip||'').replace(/,/g,'.'),
+              location:loc.name||'', notes:x.notes||'', image:null, dateAdded:data.savedAt||new Date().toLocaleString()
+            });
+          }));
+          const oldItems=(Array.isArray(data.items)?data.items:[]).concat(Array.isArray(data.inUseItems)?data.inUseItems:[]);
+          data={devices:oldItems.concat(conv), users:(Array.isArray(data.workers)&&data.workers.length)?data.workers.map(w=>({name:w.name||w.fullName||'',email:w.email||'',role:'viewer',department:w.department||w.dept||''})):undefined};
+          if(!data.users) delete data.users;
+          if(!data.devices.length) return alert('This backup has no devices in it.');
+        }
+        if(!confirm('Importing replaces the current data'+(devices.length?' ('+devices.length+' devices now)':'')+' with this backup'+(Array.isArray(data.devices)?' ('+data.devices.length+' devices)':'')+'. Continue?')) return;
+        if(Array.isArray(data.devices)){ devices = data.devices; accepted = true; }
+        if(Array.isArray(data.inventory)){ devices = data.inventory; accepted = true; }
+        if(Array.isArray(data.items)){ devices = data.items; accepted = true; }
+        if(Array.isArray(data.users)){ users = data.users; accepted = true; }
+        if(Array.isArray(data.assignments)){ assignments = data.assignments; accepted = true; }
+        if(Array.isArray(data.maintenance)){ maintenance = data.maintenance; accepted = true; }
+        if(Array.isArray(data.orders)){ orders = data.orders; accepted = true; }
+        if(Array.isArray(data.auditLog)){ auditLog = data.auditLog; accepted = true; }
+        if(Array.isArray(data.docs)){ docs = data.docs; }
+
+        if(!accepted && isDeviceLike(data)) { devices = [data]; accepted = true; }
+
+        if(!accepted){
+          for(const key in data){
+            const val = data[key];
+            if(Array.isArray(val) && val.length){
+              if(isDeviceLike(val[0]) && !Array.isArray(devices)){ devices = val; accepted = true; }
+              else if(isUserLike(val[0]) && !Array.isArray(users)){ users = val; accepted = true; }
+              else if(!accepted && typeof val[0] === 'object'){ devices = val; accepted = true; }
+            }
+            if(accepted) break;
+          }
+        }
+      }
+
+      if(!accepted){
+        return alert('Invalid JSON structure. Acceptable: array of devices, object with `devices`/`inventory`/`items`, a single device object, or object containing arrays.');
+      }
+
+      normalizeImported();
+      purgeRemovedAccounts();
+      let warn='';
+      try{ save(); }
+      catch(qe){
+        // browser storage full (usually device photos) — keep data without photos
+        devices.forEach(d=>{ if(d.image) d.image=null; });
+        try{ save(); warn=' (device photos were too big to keep and were removed)'; }
+        catch(qe2){ return alert('The backup is too big for this browser\'s storage. Nothing was saved.'); }
+      }
+      [renderInventory,updateDashboard,initializeUsers,renderMaintenance,renderOrders,renderPendingApprovals,renderRecentActivity]
+        .forEach(fn=>{ try{ fn(); }catch(re){ console.error(re); } });
+      if(typeof renderDocuments==='function') renderDocuments();
+      notify('Import successful: '+devices.length+' devices'+warn);
+    } catch(err){
+      console.error(err);
+      alert('Failed to import JSON: ' + (err.message || err));
+    }
+  };
+}
+function openAssignDialog(){
+  const select=document.getElementById('assignDevice');
+  select.innerHTML=devices.filter(d=>d.status==='available').map(d=>`<option value="${d.id}">${d.name} (${d.serial})</option>`).join('')||'<option value="">No available devices</option>';
+  document.getElementById('assignEmail').value='';
+  document.getElementById('assignName').value='';
+  document.getElementById('assignApproverEmail').value='';
+  document.getElementById('assignNotes').value='';
+  document.getElementById('assignModal').classList.add('open');
+}
+function saveAssignment(){
+  const devId=document.getElementById('assignDevice').value;
+  const userEmail=document.getElementById('assignEmail').value.trim();
+  const userName=document.getElementById('assignName').value.trim()||userEmail.split('@')[0]||'Employee';
+  const approverEmail=document.getElementById('assignApproverEmail').value.trim();
+  const notes=document.getElementById('assignNotes').value.trim();
+  if(!devId){alert('Select a device');return;}
+  if(!userEmail){alert('Enter the email of the person receiving the equipment');return;}
+  if(!approverEmail){alert('Approver email required');return;}
+
+  const dev=devices.find(d=>d.id===devId);
+
+  const pendingRequest={
+    id:'pnd'+Date.now(),
+    deviceId:devId,
+    deviceName:dev.name,
+    deviceSerial:dev.serial,
+    userEmail:userEmail,
+    userName:userName,
+    approverEmail,
+    notes,
+    requestedAt:new Date().toLocaleString(),
+    status:'pending'
+  };
+  assignments.push(pendingRequest);
+  dev.status='pending';
+
+  save();
+  closeModal('assignModal');
+  renderInventory();
+  renderPendingApprovals();
+  updateDashboard();
+  logAction('assign','Requested: '+dev.name,`Assignment to ${userName} (${userEmail}) awaiting approval from ${approverEmail}`);
+  notify('Approval request sent');
+
+  // Send the approval request automatically (EmailJS)
+  const mailBody=
+`Hello,
+
+An equipment assignment is awaiting your approval:
+
+Device: ${dev.name}
+Serial: ${dev.serial}
+Type: ${dev.type}
+Requested for: ${userName} (${userEmail})
+Notes: ${notes||'—'}
+Requested at: ${pendingRequest.requestedAt}
+
+Please open InventIQ Pro, go to Equipment > Pending Approvals, and click Approve or Reject for this request.
+
+— InventIQ Pro`;
+  sendEmail(approverEmail,userName,`Approval needed: assign ${dev.name} to ${userName}`,mailBody);
+}
+
+function renderPendingApprovals(){
+  const list=document.getElementById('pendingApprovalsList');
+  const pending=assignments.filter(a=>a.status==='pending');
+  if(!pending.length){
+    list.innerHTML='<p style="color:var(--muted);font-size:12px;">No pending approvals</p>';
+  } else {
+    list.innerHTML=pending.map(p=>`
+      <div class="approval-card">
+        <div class="approval-info">
+          <b>${p.deviceName}</b> (${p.deviceSerial}) → ${p.userName}
+          <div class="meta">Approver: ${p.approverEmail} · Requested ${p.requestedAt}${p.notes?' · '+p.notes:''}</div>
+        </div>
+        <div class="approval-actions">
+          <button class="btn btn-success btn-sm" onclick="approveAssignment('${p.id}')">Approve</button>
+          <button class="btn btn-danger btn-sm" onclick="rejectAssignment('${p.id}')">Reject</button>
+        </div>
+      </div>
+    `).join('');
+  }
+  renderEquipmentList();
+}
+function renderEquipmentList(){
+  const list=document.getElementById('equipmentList');
+  const active=assignments.filter(a=>a.status==='assigned');
+  if(!active.length){
+    list.innerHTML='<p style="color:var(--muted);font-size:12px;">No active assignments yet</p>';
+    return;
+  }
+  list.innerHTML=`<table><thead><tr><th>Device</th><th>Assigned To</th><th>Approved</th></tr></thead><tbody>`+
+    active.map(a=>`<tr><td>${a.deviceName} (${a.deviceSerial})</td><td>${a.userName}</td><td>${a.approvedAt||'—'}</td></tr>`).join('')+
+    `</tbody></table>`;
+}
+
+function approveAssignment(pendingId){
+  const p=assignments.find(a=>a.id===pendingId);
+  if(!p) return;
+  const dev=devices.find(d=>d.id===p.deviceId);
+
+  p.status='assigned';
+  p.approvedAt=new Date().toLocaleString();
+  if(dev) dev.status='assigned';
+
+  save();
+  renderInventory();
+  renderPendingApprovals();
+  updateDashboard();
+  logAction('assign',dev?dev.name:p.deviceName,`Approved — assigned to ${p.userName}`);
+  notify(`Approved: ${p.deviceName} → ${p.userName}`);
+
+  // Send the approval confirmation automatically (EmailJS)
+  if(p.userEmail){
+    const mailBody=
+`Hello ${p.userName},
+
+Your equipment request has been approved.
+
+Device: ${p.deviceName}
+Serial: ${p.deviceSerial}
+Approved at: ${p.approvedAt}
+
+— InventIQ Pro`;
+    sendEmail(p.userEmail,p.userName,`Approved: ${p.deviceName} assigned to you`,mailBody);
+  }
+}
+
+function rejectAssignment(pendingId){
+  const p=assignments.find(a=>a.id===pendingId);
+  if(!p) return;
+  if(!confirm(`Reject assignment of ${p.deviceName} to ${p.userName}?`)) return;
+  const dev=devices.find(d=>d.id===p.deviceId);
+  if(dev) dev.status='available';
+
+  assignments=assignments.filter(a=>a.id!==pendingId);
+
+  save();
+  renderInventory();
+  renderPendingApprovals();
+  updateDashboard();
+  logAction('update',dev?dev.name:p.deviceName,`Rejected — request for ${p.userName} declined`);
+  notify('Request rejected');
+}
+function openMaintDialog(){
+  const select=document.getElementById('maintDevice');
+  select.innerHTML=devices.map(d=>`<option value="${d.id}">${d.name}</option>`).join('');
+  document.getElementById('maintModal').classList.add('open');
+}
+function saveMaintenance(){
+  const devId=document.getElementById('maintDevice').value;
+  const type=document.getElementById('maintType').value;
+  const date=document.getElementById('maintDate').value;
+  const userId=document.getElementById('maintUser').value;
+  if(!devId||!date){alert('Complete all fields');return;}
+  const dev=devices.find(d=>d.id===devId);
+  const user=users.find(u=>u.id===userId);
+  maintenance.push({id:'mnt'+Date.now(),deviceId:devId,type,scheduledDate:date,assignedTo:user?user.name:'',status:'pending'});
+  dev.status='maintenance';
+  save();closeModal('maintModal');renderMaintenance();updateDashboard();logAction('update',dev.name,`Maintenance scheduled: ${type}`);notify('Maintenance scheduled');
+}
+function renderMaintenance(){
+  const table=document.getElementById('maintTable');
+  if(!maintenance.length){table.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--muted);">No scheduled maintenance</td></tr>';return;}
+  table.innerHTML=maintenance.map(m=>{const d=devices.find(x=>x.id===m.deviceId);return`<tr>
+    <td>${d?d.name:'—'}</td>
+    <td>${m.scheduledDate}</td>
+    <td><span class="badge o">${m.type}</span></td>
+    <td><span class="badge ${m.status==='completed'?'g':'o'}">${m.status}</span></td>
+    <td>${m.assignedTo}</td>
+    <td>
+      <button class="btn btn-sm btn-success" onclick="completeMaint('${m.id}')">Complete</button>
+      <button class="btn btn-sm btn-danger" onclick="deleteMaint('${m.id}')">Delete</button>
+    </td>
+  </tr>`;}).join('');
+}
+function completeMaint(id){
+  const m=maintenance.find(x=>x.id===id);
+  if(m){m.status='completed';restoreDeviceAfterMaint(m.deviceId);}
+  save();renderMaintenance();updateDashboard();notify('Maintenance marked complete');
+}
+function deleteMaint(id){
+  if(!confirm('Delete maintenance?')) return;
+  const m=maintenance.find(x=>x.id===id);
+  maintenance=maintenance.filter(x=>x.id!==id);
+  if(m) restoreDeviceAfterMaint(m.deviceId);
+  save();renderMaintenance();updateDashboard();notify('Maintenance deleted');
+}
+function restoreDeviceAfterMaint(devId){
+  const dev=devices.find(d=>d.id===devId);
+  if(!dev) return;
+  const hasOpen=maintenance.some(m=>m.deviceId===devId&&m.status!=='completed');
+  if(!hasOpen && dev.status==='maintenance') dev.status='available';
+}
+function filterHistory(){
+  const search=document.getElementById('histSearch').value.toLowerCase();
+  const action=document.getElementById('histFilter').value;
+  const filtered=auditLog.filter(h=>(String(h.device||'').toLowerCase().includes(search)||String(h.user||'').toLowerCase().includes(search))&&(!action||h.action===action));
+  const table=document.getElementById('historyTable');
+  table.innerHTML=filtered.length?filtered.map(h=>`<tr><td>${h.timestamp}</td><td>${h.user}</td><td><span class="badge g">${h.action}</span></td><td>${h.device}</td><td>${h.details}</td></tr>`).join(''):'<tr><td colspan="5" style="text-align:center;color:var(--muted);">No records</td></tr>';
+}
+function openOrderDialog(){
+  document.getElementById('orderName').value='';
+  document.getElementById('orderQty').value='1';
+  document.getElementById('orderPrice').value='';
+  document.getElementById('orderSupplier').value='';
+  document.getElementById('orderModal').classList.add('open');
+}
+function saveOrder(){
+  const name=document.getElementById('orderName').value.trim();
+  if(!name){alert('Item name required');return;}
+  orders.push({id:'ord'+Date.now(),name,qty:parseInt(document.getElementById('orderQty').value)||1,price:parseFloat(document.getElementById('orderPrice').value)||0,supplier:document.getElementById('orderSupplier').value,status:'pending',dateCreated:new Date().toLocaleString()});
+  save();closeModal('orderModal');renderOrders();notify('Order created');
+}
+function renderOrders(){
+  const list=document.getElementById('ordersList');
+  if(!orders.length){list.innerHTML='<p style="text-align:center;color:var(--muted);">No orders</p>';return;}
+  list.innerHTML=orders.map(o=>`<div class="card" style="margin-bottom:12px;">
+    <div style="display:flex;justify-content:space-between;align-items:start;">
+      <div>
+        <div style="font-weight:700;color:var(--white);">${o.name}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px;">Qty: ${o.qty} | Price: ${o.price} ${appSettings.currency} | Supplier: ${o.supplier}</div>
+        <div style="font-size:10px;color:var(--muted);margin-top:2px;">${o.dateCreated}</div>
+      </div>
+      <div style="display:flex;gap:6px;">
+        <span class="badge ${o.status==='pending'?'o':o.status==='received'?'g':'r'}">${o.status}</span>
+        <button class="btn btn-sm btn-danger" onclick="deleteOrder('${o.id}')">×</button>
+      </div>
+    </div>
+  </div>`).join('');
+}
+function deleteOrder(id){
+  if(!confirm('Delete order?')) return;
+  orders=orders.filter(o=>o.id!==id);
+  save();renderOrders();notify('Order deleted');
+}
+function openUserDialog(){
+  const modal = document.getElementById('userModal');
+  document.getElementById('userName').value='';
+  document.getElementById('userEmail').value='';
+  document.getElementById('userRole').value='it';
+  modal.querySelector('.modal-header h2').textContent = 'Add User';
+  modal.querySelector('button.btn-primary').textContent = 'Add User';
+  modal.removeAttribute('data-edit-id');
+  modal.classList.add('open');
+}
+function saveUser(){
+  const name=document.getElementById('userName').value.trim();
+  const email=document.getElementById('userEmail').value.trim();
+  const role=document.getElementById('userRole').value;
+  if(!name||!email){alert('Complete all fields');return;}
+  const modal = document.getElementById('userModal');
+  const editId = modal.getAttribute('data-edit-id');
+  if(editId){
+    const user = users.find(u=>u.id===editId);
+    if(user){
+      user.name = name;
+      user.email = email;
+      user.role = role;
+      user.lastLogin = user.lastLogin || new Date().toLocaleString();
+      save();
+      closeModal('userModal');
+      initializeUsers();
+      notify('User updated');
+      return;
+    }
+  }
+  users.push({id:'u'+Date.now(),name,email,role,status:'active',lastLogin:new Date().toLocaleString()});
+  save();closeModal('userModal');initializeUsers();notify('User added');
+}
+function editUser(id){
+  const user = users.find(u=>u.id===id);
+  if(!user) return;
+  const modal = document.getElementById('userModal');
+  document.getElementById('userName').value = user.name;
+  document.getElementById('userEmail').value = user.email;
+  document.getElementById('userRole').value = user.role;
+  modal.querySelector('.modal-header h2').textContent = 'Edit User';
+  modal.querySelector('button.btn-primary').textContent = 'Save Changes';
+  modal.setAttribute('data-edit-id', id);
+  modal.classList.add('open');
+}
+function deleteUser(id){
+  if(!confirm('Remove user?')) return;
+  users=users.filter(u=>u.id!==id);
+  save();initializeUsers();notify('User removed');
+}
+function saveSettings(){
+  appSettings.company=document.getElementById('settingsCompany').value.trim()||'Your Company';
+  appSettings.currency=document.getElementById('settingsCurrency').value;
+  localStorage.setItem('inventiq-settings',JSON.stringify(appSettings));
+  updateDashboard();renderInventory();renderOrders();
+  notify('Settings saved!');
+}
+function loadSettings(){
+  try{
+    const s=JSON.parse(localStorage.getItem('inventiq-settings'));
+    if(s&&s.company) appSettings.company=s.company;
+    if(s&&s.currency) appSettings.currency=s.currency;
+  }catch(e){}
+  const sc=document.getElementById('settingsCompany'); if(sc) sc.value=appSettings.company;
+  const cu=document.getElementById('settingsCurrency'); if(cu) cu.value=appSettings.currency;
+}
+function closeModal(id){
+  document.getElementById(id).classList.remove('open');
+}
+function logAction(action,device,details){
+  auditLog.push({timestamp:new Date().toLocaleString(),user:currentUser,action,device,details});
+  save();
+}
+function notify(msg){
+  const toast=document.createElement('div');
+  toast.className='toast';
+  toast.textContent=msg;
+  document.body.appendChild(toast);
+  setTimeout(()=>toast.remove(),3000);
+}
+init();
+
+/* ============ THEME TOGGLE ============ */
+(function () {
+  const toggle = document.getElementById('themeToggle');
+  const root = document.documentElement;
+  const darkVars = {'--bg':'#06090f','--surface':'#0c1424','--surface2':'#101d36','--surface3':'#152444','--border':'#1c3060','--accent':'#4a8ff5','--accent2':'#7db8ff','--glow':'rgba(74,143,245,.14)','--danger':'#f05c6a','--success':'#2ec47a','--warn':'#f59e0b','--text':'#dde8ff','--muted':'#4e6a9a','--white':'#fff'};
+  const lightVars = {'--bg':'#f4f7fc','--surface':'#ffffff','--surface2':'#eef2fa','--surface3':'#e3e9f5','--border':'#d3ddef','--accent':'#2060d0','--accent2':'#2f6fe0','--glow':'rgba(32,96,208,.10)','--danger':'#c02030','--success':'#187040','--warn':'#a06000','--text':'#0e1a33','--muted':'#5b6b8c','--white':'#0e1a33'};
+
+  function applyTheme(theme) {
+    const vars = theme === 'light' ? lightVars : darkVars;
+    for (const key in vars) root.style.setProperty(key, vars[key]);
+    toggle.textContent = theme === 'light' ? '☀️' : '🌙';
+    root.dataset.theme = theme;
+    localStorage.setItem('inventiq-theme', theme);
+  }
+
+  applyTheme(localStorage.getItem('inventiq-theme') || 'dark');
+
+  toggle.addEventListener('click', () => {
+    applyTheme(root.dataset.theme === 'light' ? 'dark' : 'light');
+  });
+})();
+
+/* ============ LOGOUT BUTTON (walking figure) ============ */
+// Scroll-to-top button for dashboard
+(function(){
+  const content = document.querySelector('.content');
+  const scrollTarget = content && content.scrollHeight > content.clientHeight ? content : document.documentElement;
+  const btn = document.createElement('button');
+  btn.id = 'scrollTopBtn';
+  btn.className = 'scroll-btn';
+  btn.title = 'Scroll to top';
+  btn.innerHTML = '↑';
+  document.body.appendChild(btn);
+
+  function updateBtn(){
+    const dash = document.getElementById('dashboard');
+    const dashboardActive = dash && dash.classList.contains('active');
+    btn.style.display = dashboardActive ? 'flex' : 'none';
+  }
+
+  if(content) content.addEventListener('scroll', updateBtn);
+  // also check when switching tabs
+  document.querySelectorAll('.sidebar-item,.tab').forEach(el=>el.addEventListener('click', ()=>setTimeout(updateBtn,120)));
+  btn.addEventListener('click', ()=>{
+    const target = content || document.documentElement;
+    if(target.scrollTo){
+      target.scrollTo({top:0,behavior:'smooth'});
+    } else {
+      target.scrollTop = 0;
+    }
+  });
+  // initial
+  setTimeout(updateBtn,300);
+})();
+</script>
+<!-- ===== STOCK ASSISTANT (chatbot) ===== -->
+<style>
+.scroll-btn{bottom:92px !important;}
+#chatFab{position:fixed;bottom:28px;right:28px;width:52px;height:52px;border-radius:50%;background:var(--accent);color:#fff;border:none;font-size:24px;cursor:pointer;z-index:450;box-shadow:0 8px 24px rgba(74,143,245,.35);display:flex;align-items:center;justify-content:center;}
+#chatFab:hover{transform:translateY(-2px);}
+#chatPanel{position:fixed;bottom:92px;right:28px;width:400px;max-width:calc(100vw - 32px);height:560px;max-height:calc(100vh - 120px);background:var(--surface);border:1px solid var(--border);border-radius:16px;box-shadow:0 20px 50px rgba(0,0,0,.45);z-index:460;display:none;flex-direction:column;overflow:hidden;}
+#chatPanel.open{display:flex;}
+.chat-head{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--border);background:var(--surface2);}
+.chat-head b{font-size:14px;}
+.chat-head small{display:block;font-size:11px;color:var(--muted);font-weight:500;}
+.chat-head button{background:none;border:none;color:var(--text);font-size:18px;cursor:pointer;padding:4px 6px;border-radius:8px;}
+.chat-head button:hover{background:var(--surface3);}
+#chatMsgs{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;}
+.cmsg{max-width:88%;padding:9px 12px;border-radius:12px;font-size:13px;line-height:1.5;white-space:pre-wrap;word-wrap:break-word;}
+.cmsg.user{align-self:flex-end;background:var(--accent);color:#fff;border-bottom-right-radius:4px;}
+.cmsg.bot{align-self:flex-start;background:var(--surface2);border:1px solid var(--border);border-bottom-left-radius:4px;}
+.cmsg.bot code{font-family:'IBM Plex Mono',monospace;font-size:12px;background:var(--surface3);padding:1px 5px;border-radius:4px;}
+.cmsg.sys{align-self:center;font-size:11px;color:var(--muted);background:none;padding:2px;text-align:center;}
+.chat-input{display:flex;gap:8px;padding:10px;border-top:1px solid var(--border);}
+.chat-input input{flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:10px 12px;font-family:inherit;font-size:13px;}
+.chat-input button{background:var(--accent);color:#fff;border:none;border-radius:10px;padding:0 14px;font-weight:700;cursor:pointer;}
+.chat-input button:disabled{opacity:.5;cursor:default;}
+#chatSettings{display:none;padding:14px;overflow-y:auto;flex:1;}
+#chatSettings.open{display:block;}
+#chatSettings label{display:block;font-size:12px;font-weight:600;margin:10px 0 4px;}
+#chatSettings input[type=text],#chatSettings input[type=password]{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:8px 10px;font-family:inherit;font-size:12px;}
+#chatSettings p{font-size:11px;color:var(--muted);line-height:1.5;margin-top:4px;}
+#chatSettings .row{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;}
+#chatSettings .row button{background:var(--surface3);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:7px 10px;font-size:12px;cursor:pointer;font-family:inherit;}
+#chatSettings .row button.primary{background:var(--accent);border-color:var(--accent);color:#fff;}
+#stockStatus{font-size:12px;margin-top:8px;padding:8px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);}
+.chat-suggest{display:flex;flex-wrap:wrap;gap:6px;}
+.chat-suggest button{background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:999px;padding:5px 10px;font-size:11px;cursor:pointer;font-family:inherit;}
+
+/* save button */
+.save-btn{display:flex;align-items:center;gap:6px;background:var(--accent);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;}
+.save-btn:hover{filter:brightness(1.1);}
+/* ===== PHONE LAYOUT ===== */
+@media (max-width:760px){
+  .container{flex-direction:column;height:100dvh;}
+  .sidebar{order:2;position:fixed;left:0;right:0;bottom:0;top:auto;width:100%;height:60px;flex-direction:row;justify-content:space-around;padding:6px 4px calc(6px + env(safe-area-inset-bottom));gap:0;border-right:none;border-top:1px solid var(--border);z-index:420;overflow-x:auto;overflow-y:hidden;}
+  .sidebar-item{width:40px;height:40px;font-size:18px;flex-shrink:0;}
+  .main-content{padding-bottom:70px;}
+  header{padding:10px 14px;}
+  header h1{font-size:17px;}
+  .save-btn{padding:7px 10px;}
+  .save-btn span{display:none;}
+  .content{padding:14px 12px;}
+  .card{padding:14px;border-radius:12px;}
+  .grid-3{grid-template-columns:1fr 1fr;gap:10px;}
+  .grid-2{grid-template-columns:1fr;gap:10px;}
+  .grid-2>*,.grid-3>*{min-width:0;}
+  canvas{max-width:100% !important;}
+  .stat-box{padding:12px !important;min-width:0;}
+  .stat-value{font-size:24px !important;word-break:break-word;}
+  .stat-label{font-size:10px !important;}
+  table{display:block;overflow-x:auto;white-space:nowrap;-webkit-overflow-scrolling:touch;}
+  .user-cards{grid-template-columns:1fr;}
+  .modal-content{width:94%;max-height:88vh;padding:16px;}
+  input,select,textarea{font-size:16px !important;} /* stops iPhone zooming on tap */
+  .toast{top:14px;bottom:auto;left:12px;right:12px;text-align:center;}
+  .scroll-btn{display:none !important;}
+  #chatFab{bottom:76px;right:14px;width:48px;height:48px;}
+  #chatPanel{left:8px;right:8px;bottom:70px;width:auto;max-width:none;height:auto;top:60px;max-height:none;}
+  .cmsg{max-width:94%;}
+  .chat-input input{font-size:16px;}
+}
+</style>
+
+<button id="chatFab" title="Stock Assistant" onclick="toggleChat()">💬</button>
+<div id="chatPanel">
+  <div class="chat-head">
+    <div><b>🤖 Stock Assistant</b><small id="chatModeLabel">Offline search</small></div>
+    <div>
+      <button title="Settings" onclick="toggleChatSettings()">⚙️</button>
+      <button title="Clear chat" onclick="clearChat()">🗑️</button>
+      <button title="Close" onclick="toggleChat()">×</button>
+    </div>
+  </div>
+  <div id="chatMsgs"></div>
+  <div id="chatSettings">
+    <label>AI API key (Google Gemini or OpenAI)</label>
+    <input type="password" id="chatApiKey" placeholder="Gemini key or sk-... OpenAI key">
+    <p>The provider is detected from the key (OpenAI keys start with “sk-”, anything else is treated as Google Gemini).</p>
+    <label>Model (leave empty for default)</label>
+    <input type="text" id="chatModel" placeholder="gemini-2.5-flash / gpt-4o-mini">
+    <label>Stock from Google Drive (Google Sheet link)</label>
+    <input type="text" id="chatSheetUrl" placeholder="https://docs.google.com/spreadsheets/d/...">
+    <p>Share the sheet as “Anyone with the link – Viewer”. The tab shown in the link (gid) is the one loaded.</p>
+    <div class="row">
+      <button class="primary" onclick="loadStockFromSheet()">Load from Drive</button>
+      <button onclick="document.getElementById('chatStockFile').click()">Upload Excel / CSV</button>
+      <button onclick="clearStockFile()">Remove stock file</button>
+      <input type="file" id="chatStockFile" accept=".xlsx,.xls,.csv" style="display:none" onchange="loadStockFromFile(this)">
+    </div>
+    <div id="stockStatus"></div>
+    <div class="row" style="margin-top:14px;">
+      <button class="primary" onclick="saveChatSettings()">Save</button>
+      <button onclick="toggleChatSettings()">Back to chat</button>
+    </div>
+  </div>
+  <div class="chat-input" id="chatInputRow">
+    <input type="text" id="chatInput" placeholder="Do we have a 24&quot; monitor?" onkeydown="if(event.key==='Enter')sendChat()">
+    <button id="chatSendBtn" onclick="sendChat()">➤</button>
+  </div>
+</div>
+
+<script>
+const CHAT_CFG_KEY='inventiq-chat-cfg', CHAT_STOCK_KEY='inventiq-chat-stock';
+const CHAT_DEFAULT_KEY=''; // enter the key once in the assistant ⚙️ — it then syncs to your other devices through Google Drive
+let chatCfg={apiKey:CHAT_DEFAULT_KEY,model:'',sheetUrl:''};
+let chatStock={source:'',loadedAt:'',rows:[]};
+let chatHistory=[];
+try{Object.assign(chatCfg,JSON.parse(localStorage.getItem(CHAT_CFG_KEY))||{});}catch(e){}
+if(!chatCfg.apiKey) chatCfg.apiKey=CHAT_DEFAULT_KEY;
+function chatProvider(){return /^sk-/.test(chatCfg.apiKey)?'openai':'gemini';}
+function chatModel(){return chatCfg.model||(chatProvider()==='openai'?'gpt-4o-mini':'gemini-2.5-flash');}
+try{const st=JSON.parse(localStorage.getItem(CHAT_STOCK_KEY));if(st&&Array.isArray(st.rows))chatStock=st;}catch(e){}
+
+function chatEsc(t){return String(t==null?'':t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function chatFmt(t){return chatEsc(t).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/`([^`]+)`/g,'<code>$1</code>');}
+function addChatMsg(role,text){
+  const box=document.getElementById('chatMsgs');
+  const d=document.createElement('div');
+  d.className='cmsg '+role;
+  d.innerHTML=role==='bot'?chatFmt(text):chatEsc(text);
+  box.appendChild(d);box.scrollTop=box.scrollHeight;
+  return d;
+}
+function updateChatMode(){
+  document.getElementById('chatModeLabel').textContent=(chatCfg.apiKey?'AI · '+chatModel():'Offline search')+' · '+devices.length+' app devices'+(chatStock.rows.length?' + '+chatStock.rows.length+' stock rows':'');
+  const st=document.getElementById('stockStatus');
+  st.innerHTML=chatStock.rows.length
+    ?'✅ Stock file: <b>'+chatEsc(chatStock.source)+'</b><br>'+chatStock.rows.length+' rows · loaded '+chatEsc(chatStock.loadedAt)
+    :'No stock file loaded — the assistant only uses the devices in this app.';
+}
+function chatWelcome(){
+  document.getElementById('chatMsgs').innerHTML='';
+  addChatMsg('bot','Hi! Ask me about the stock, e.g.:\n• Do we have a docking station?\n• How many laptops are available?');
+  const s=document.createElement('div');s.className='chat-suggest';
+  ['Do we have any laptops available?','List all monitors'].forEach(q=>{
+    const b=document.createElement('button');b.textContent=q;b.onclick=()=>{document.getElementById('chatInput').value=q;sendChat();};s.appendChild(b);
+  });
+  document.getElementById('chatMsgs').appendChild(s);
+}
+function toggleChat(){
+  const p=document.getElementById('chatPanel');p.classList.toggle('open');
+  if(p.classList.contains('open')){
+    updateChatMode();
+    if(!document.getElementById('chatMsgs').children.length) chatWelcome();
+    document.getElementById('chatInput').focus();
+  }
+}
+function toggleChatSettings(){
+  const s=document.getElementById('chatSettings'),open=!s.classList.contains('open');
+  s.classList.toggle('open',open);
+  document.getElementById('chatMsgs').style.display=open?'none':'flex';
+  document.getElementById('chatInputRow').style.display=open?'none':'flex';
+  if(open){
+    document.getElementById('chatApiKey').value=chatCfg.apiKey||'';
+    document.getElementById('chatModel').value=chatCfg.model||'';
+    document.getElementById('chatSheetUrl').value=chatCfg.sheetUrl||'';
+    updateChatMode();
+  }
+}
+function saveChatSettings(){
+  chatCfg.apiKey=document.getElementById('chatApiKey').value.trim();
+  chatCfg.model=document.getElementById('chatModel').value.trim();
+  chatCfg.sheetUrl=document.getElementById('chatSheetUrl').value.trim();
+  localStorage.setItem(CHAT_CFG_KEY,JSON.stringify(chatCfg));
+  updateChatMode();notify('Assistant settings saved');toggleChatSettings();
+}
+function clearChat(){chatHistory=[];chatWelcome();}
+function storeStock(rows,source){
+  rows=rows.filter(r=>Object.values(r).some(v=>String(v).trim()!==''));
+  chatStock={source,loadedAt:new Date().toLocaleString(),rows};
+  try{localStorage.setItem(CHAT_STOCK_KEY,JSON.stringify(chatStock));}catch(e){notify('Stock file too big to keep after reload — it works for this session');}
+  updateChatMode();notify(rows.length+' stock rows loaded');
+}
+function clearStockFile(){chatStock={source:'',loadedAt:'',rows:[]};localStorage.removeItem(CHAT_STOCK_KEY);updateChatMode();}
+async function loadStockFromSheet(){
+  const url=document.getElementById('chatSheetUrl').value.trim();
+  const m=url.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+  if(!m){alert('Paste a Google Sheets link (docs.google.com/spreadsheets/d/...).\nFor an Excel file in Drive, open it with Google Sheets first, or download it and use "Upload Excel / CSV".');return;}
+  const gid=(url.match(/[#&?]gid=(\d+)/)||[])[1];
+  const csvUrl='https://docs.google.com/spreadsheets/d/'+m[1]+'/gviz/tq?tqx=out:csv'+(gid?'&gid='+gid:'');
+  const st=document.getElementById('stockStatus');st.textContent='Loading from Google Drive…';
+  try{
+    const r=await fetch(csvUrl);
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const text=await r.text();
+    if(/^\s*<!DOCTYPE|<html/i.test(text)) throw new Error('not shared');
+    const wb=XLSX.read(text,{type:'string'});
+    const rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:''});
+    chatCfg.sheetUrl=url;localStorage.setItem(CHAT_CFG_KEY,JSON.stringify(chatCfg));
+    storeStock(rows,'Google Sheet');
+  }catch(e){
+    console.error(e);
+    st.innerHTML='❌ Could not read the sheet. Check it is shared as “Anyone with the link – Viewer”, or download it and use Upload Excel / CSV.';
+  }
+}
+function loadStockFromFile(input){
+  const f=input.files[0];if(!f)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'});
+      let rows=[];
+      wb.SheetNames.forEach(n=>{XLSX.utils.sheet_to_json(wb.Sheets[n],{defval:''}).forEach(r=>{if(wb.SheetNames.length>1)r._sheet=n;rows.push(r);});});
+      storeStock(rows,f.name);
+    }catch(err){console.error(err);alert('Could not read this file.');}
+    input.value='';
+  };
+  reader.readAsArrayBuffer(f);
+}
+
+// ---- Build the data the assistant knows about ----
+function chatAppDevices(){
+  return devices.map(d=>{
+    const a=assignments.find(x=>x.deviceId===d.id&&x.status==='assigned');
+    const p=assignments.find(x=>x.deviceId===d.id&&x.status==='pending');
+    const row={source:'App inventory'};
+    Object.keys(d).forEach(k=>{ if(!['id','image','dateAdded'].includes(k) && d[k]!=='' && d[k]!=null) row[k]=d[k]; });
+    if(a) row.assignedTo=(a.userName||'')+(a.userEmail?' <'+a.userEmail+'>':'');
+    if(p) row.pendingFor=(p.userName||'')+(p.userEmail?' <'+p.userEmail+'>':'');
+    return row;
+  });
+}
+function chatAllRows(){
+  return chatAppDevices().concat(docs.map(d=>({source:'Documents',document:d.name,category:d.category,added:String(d.addedAt).slice(0,10),onDrive:d.driveId?'yes':'no'})),chatStock.rows.map(r=>Object.assign({source:'Stock file ('+chatStock.source+')'},r)));
+}
+const CHAT_STOP=new Set('a an the do does did we you i is are was be have has had any some of for to in on at with what whats which who whom how many much can could please check tell me give show find list number numbers serial sn s/n mac address that this there their our my his her its it one le la les un une des du de est ce qui que quoi quel quelle quels quelles avez avons nous vous on a t il y pour dans sur avec numero numéro série serie donne moi est-ce stp svp combien'.split(' '));
+function chatNorm(t){return String(t).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');}
+function chatTokens(q){return chatNorm(q).replace(/[^a-z0-9\-\.\s]/g,' ').split(/\s+/).filter(w=>w.length>1&&!CHAT_STOP.has(w));}
+const CHAT_SYN={pc:['pc','laptop','desktop','computer','ordinateur','portable','notebook','elitebook','thinkpad','latitude'],laptop:['laptop','portable','notebook','pc'],ecran:['ecran','monitor','screen'],monitor:['monitor','ecran','screen'],imprimante:['imprimante','printer'],printer:['printer','imprimante'],telephone:['telephone','phone','mobile','smartphone'],phone:['phone','telephone','mobile','smartphone']};
+function chatLev(a,b){if(Math.abs(a.length-b.length)>2)return 9;const d=[];for(let i=0;i<=a.length;i++){d[i]=[i];for(let j=1;j<=b.length;j++)d[i][j]=i?Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(a[i-1]===b[j-1]?0:1)):j;}return d[a.length][b.length];}
+function chatTokHit(t,hay,words){
+  const alts=CHAT_SYN[t]||[t];
+  if(alts.some(a=>hay.includes(a)||(a.endsWith('s')&&hay.includes(a.slice(0,-1)))))return true;
+  if(t.length>=5&&!/\d/.test(t)) return words.some(w=>chatLev(t,w)<=(t.length>=6?2:1)); // spelling variants: Bushra/Bouchra
+  return false;
+}
+function chatSearch(q,rows){
+  const toks=chatTokens(q);if(!toks.length)return {toks,hits:[]};
+  const scored=rows.map(r=>{
+    const hay=chatNorm(Object.values(r).join(' | '));
+    const words=hay.split(/[^a-z0-9]+/).filter(w=>w.length>=4);
+    const score=toks.reduce((s,t)=>s+(chatTokHit(t,hay,words)?1:0),0);
+    return {r,score};
+  }).filter(x=>x.score>0).sort((a,b)=>b.score-a.score);
+  const best=scored.length?scored[0].score:0;
+  return {toks,hits:scored.filter(x=>x.score===best).map(x=>x.r)};
+}
+function chatRowLine(r){
+  const skip=['source','_sheet'];
+  const parts=Object.entries(r).filter(([k,v])=>!skip.includes(k)&&String(v).trim()!=='').map(([k,v])=>k+': '+v);
+  return '• '+parts.join(' · ')+'  ('+r.source+')';
+}
+function chatOffline(q){
+  const {toks,hits}=chatSearch(q,chatAllRows());
+  if(!toks.length) return 'Tell me what item, person or serial number to look for.';
+  if(!hits.length) return '**No** — nothing matching “'+toks.join(' ')+'” in the app inventory'+(chatStock.rows.length?' or the stock file':'')+'.';
+  const shown=hits.slice(0,15);
+  return '**Yes** — '+hits.length+' match'+(hits.length>1?'es':'')+':\n'+shown.map(chatRowLine).join('\n')+(hits.length>15?'\n…and '+(hits.length-15)+' more.':'')+'\n\n(Offline search — add an AI key in ⚙️ for smarter answers.)';
+}
+
+// ---- OpenAI ----
+function chatContext(q){
+  let rows=chatAllRows();
+  let text=JSON.stringify(rows);
+  const LIMIT=120000; // keep request size reasonable
+  if(text.length>LIMIT){
+    const {hits}=chatSearch(q,rows);
+    const toks=chatTokens(q);
+    const loose=rows.filter(r=>{const h=chatNorm(Object.values(r).join(' '));return toks.some(t=>h.includes(t));});
+    rows=(loose.length?loose:hits);
+    text=JSON.stringify(rows);
+    if(text.length>LIMIT) text=text.slice(0,LIMIT)+' …(truncated)';
+    return {text,note:'Only the rows matching the question are included (full stock is too large to send).'};
+  }
+  return {text,note:'This is the complete stock.'};
+}
+async function chatAI(q){
+  const ctx=chatContext(q);
+  const system='You are the IT stock assistant of '+(appSettings.company&&appSettings.company!=='Your Company'?appSettings.company:'DAWEC')+'. '
+    +'Answer ONLY from the stock data below. For "do we have X" questions, start with a clear **Yes** or **No**, then give the useful details (quantity, status, serial number, who has it). '
+    +'Names may be spelled differently (e.g. Bouchra / Bushra / Bochra) — match them sensibly. If the data does not contain the answer, say so plainly; never invent serial numbers. '
+    +'Reply in the language the user writes in (English, French or Darija). Keep answers short.\n\n'
+    +'Today: '+new Date().toLocaleDateString()+'. '+ctx.note+'\nSTOCK DATA (JSON):\n'+ctx.text;
+  if(chatProvider()==='gemini'){
+    const contents=chatHistory.slice(-8).map(m=>({role:m.role==='assistant'?'model':'user',parts:[{text:m.content}]})).concat([{role:'user',parts:[{text:q}]}]);
+    const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+encodeURIComponent(chatModel())+':generateContent',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-goog-api-key':chatCfg.apiKey},
+      body:JSON.stringify({systemInstruction:{parts:[{text:system}]},contents,generationConfig:{temperature:0.1}})
+    });
+    const data=await r.json().catch(()=>({}));
+    if(!r.ok) throw new Error((data.error&&data.error.message)||('HTTP '+r.status));
+    const c=data.candidates&&data.candidates[0];
+    const txt=c&&c.content&&c.content.parts?c.content.parts.map(p=>p.text||'').join(''):'';
+    if(!txt) throw new Error('Empty answer'+(c&&c.finishReason?' ('+c.finishReason+')':''));
+    return txt;
+  }
+  const msgs=[{role:'system',content:system}].concat(chatHistory.slice(-8),[{role:'user',content:q}]);
+  const r=await fetch('https://api.openai.com/v1/chat/completions',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+chatCfg.apiKey},
+    body:JSON.stringify({model:chatModel(),messages:msgs,temperature:0.1})
+  });
+  const data=await r.json().catch(()=>({}));
+  if(!r.ok) throw new Error((data.error&&data.error.message)||('HTTP '+r.status));
+  return data.choices[0].message.content;
+}
+async function sendChat(){
+  const inp=document.getElementById('chatInput'),btn=document.getElementById('chatSendBtn');
+  const q=inp.value.trim();if(!q)return;
+  inp.value='';addChatMsg('user',q);
+  const sug=document.querySelector('#chatMsgs .chat-suggest');if(sug)sug.remove();
+  let answer;
+  if(chatCfg.apiKey){
+    const wait=addChatMsg('sys','Thinking…');btn.disabled=true;
+    try{answer=await chatAI(q);}
+    catch(e){answer='⚠️ AI error: '+e.message+'\n\nOffline result instead:\n'+chatOffline(q);}
+    wait.remove();btn.disabled=false;
+  } else answer=chatOffline(q);
+  chatHistory.push({role:'user',content:q},{role:'assistant',content:answer});
+  addChatMsg('bot',answer);
+}
+</script>
+<!-- ===== DOCUMENTS + GOOGLE DRIVE SYNC + INSTALLABLE APP ===== -->
+<style>
+.cloud-btn{display:flex;align-items:center;gap:6px;background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;}
+.cloud-btn.ok{border-color:var(--success);}
+.cloud-btn.sync{border-color:var(--accent);}
+.cloud-btn.warn{border-color:var(--warn);}
+.cloud-btn.err{border-color:var(--danger);}
+.set-note{font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:10px;}
+.set-check{display:flex;gap:8px;align-items:center;font-size:12px;margin:6px 0;cursor:pointer;}
+.set-check input{width:auto !important;flex:none;margin:0;}
+.doc-add{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+.doc-add span{font-size:12px;color:var(--muted);font-weight:600;}
+.doc-add select{flex:1;min-width:160px;}
+.doc-drop{border:1.5px dashed var(--border);border-radius:12px;padding:14px;text-align:center;font-size:12px;color:var(--muted);margin:12px 0;}
+.doc-drop.over{border-color:var(--accent);background:var(--glow);color:var(--text);}
+.doc-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;}
+.doc-item{display:flex;gap:12px;align-items:flex-start;background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:12px;min-width:0;}
+.doc-icon{font-size:26px;line-height:1;}
+.doc-main{flex:1;min-width:0;}
+.doc-name{font-weight:700;font-size:13px;word-break:break-word;cursor:pointer;}
+.doc-name:hover{color:var(--accent2);}
+.doc-meta{font-size:11px;color:var(--muted);margin-top:4px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;}
+.doc-meta select{background:var(--surface3);color:var(--text);border:1px solid var(--border);border-radius:6px;font-size:11px;padding:2px 4px;font-family:inherit;}
+.doc-actions{display:flex;gap:4px;}
+.doc-actions button{background:none;border:1px solid var(--border);color:var(--text);border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:14px;}
+.doc-actions button:hover{background:var(--surface3);}
+.doc-empty{color:var(--muted);font-size:13px;text-align:center;padding:24px;}
+@media (max-width:760px){
+  .cloud-btn{padding:7px 9px;} .cloud-btn span{display:none;}
+  .doc-list{grid-template-columns:1fr;}
+}
+</style>
+<script>
+/* ---------- Documents ---------- */
+const DOC_CATS=['Invoice / Facture','Contract','Warranty','Delivery note (BL)','Purchase order','Procedure','Certificate','Other'];
+(function(){
+  const opts=DOC_CATS.map(c=>`<option value="${c}">${c}</option>`).join('');
+  document.getElementById('docFilter').insertAdjacentHTML('beforeend',opts);
+  document.getElementById('docUploadCat').innerHTML=opts;
+  const drop=document.getElementById('docDrop');
+  ['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('over');}));
+  ['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('over');}));
+  drop.addEventListener('drop',e=>addDocuments(e.dataTransfer.files));
+})();
+function idbOpen(){return new Promise((res,rej)=>{const r=indexedDB.open('inventiq-files',1);r.onupgradeneeded=()=>r.result.createObjectStore('files');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);});}
+async function idbDo(mode,fn){const db=await idbOpen();return new Promise((res,rej)=>{const t=db.transaction('files',mode);const st=t.objectStore('files');const rq=fn(st);t.oncomplete=()=>res(rq&&rq.result);t.onerror=()=>rej(t.error);});}
+const idbPut=(k,v)=>idbDo('readwrite',st=>st.put(v,k));
+const idbGet=k=>idbDo('readonly',st=>st.get(k));
+const idbDel=k=>idbDo('readwrite',st=>st.delete(k));
+let docLocal={}; // id -> true when the file is on this device
+async function refreshDocLocal(){
+  docLocal={};
+  try{ const keys=await idbDo('readonly',st=>st.getAllKeys()); (keys||[]).forEach(k=>docLocal[k]=true);}catch(e){}
+}
+function fmtSize(b){b=+b||0;return b>1048576?(b/1048576).toFixed(1)+' MB':Math.max(1,Math.round(b/1024))+' KB';}
+async function addDocuments(fileList){
+  const files=[...(fileList||[])];if(!files.length)return;
+  const cat=document.getElementById('docUploadCat').value;
+  for(const f of files){
+    const id='doc'+Date.now()+Math.random().toString(36).slice(2,7);
+    try{ await idbPut(id,f); }catch(e){ alert('Could not store '+f.name+' on this device: '+e.message); continue; }
+    docs.push({id,name:f.name,type:f.type||'',size:f.size,category:cat,addedAt:new Date().toISOString(),driveId:'',webViewLink:''});
+    docLocal[id]=true;
+    logAction('add',f.name,'Document added ('+cat+')');
+  }
+  save();renderDocuments();notify(files.length+' document'+(files.length>1?'s':'')+' added');
+}
+function renderDocuments(){
+  const list=document.getElementById('docList');if(!list)return;
+  const q=(document.getElementById('docSearch').value||'').toLowerCase();
+  const cat=document.getElementById('docFilter').value;
+  const rows=docs.filter(d=>(!q||d.name.toLowerCase().includes(q)||String(d.category).toLowerCase().includes(q))&&(!cat||d.category===cat))
+    .sort((a,b)=>String(b.addedAt).localeCompare(String(a.addedAt)));
+  if(!rows.length){list.innerHTML='<div class="doc-empty">'+(docs.length?'No document matches.':'No documents yet — add your important PDFs.')+'</div>';return;}
+  list.innerHTML=rows.map(d=>{
+    const onDev=docLocal[d.id], onDrive=!!d.driveId;
+    const where=onDrive&&onDev?'<span class="badge g">Drive + device</span>':onDrive?'<span class="badge p">On Drive</span>':'<span class="badge o">This device only</span>';
+    const icon=/pdf/i.test(d.type||d.name)?'📕':/image/i.test(d.type)?'🖼️':/sheet|xls/i.test(d.type||d.name)?'📗':'📘';
+    const catOpts=DOC_CATS.map(c=>`<option ${c===d.category?'selected':''}>${chatEsc(c)}</option>`).join('');
+    return `<div class="doc-item">
+      <div class="doc-icon">${icon}</div>
+      <div class="doc-main">
+        <div class="doc-name" onclick="openDocument('${d.id}')" title="Open">${chatEsc(d.name)}</div>
+        <div class="doc-meta"><select onchange="setDocCategory('${d.id}',this.value)">${catOpts}</select>${fmtSize(d.size)} · ${new Date(d.addedAt).toLocaleDateString()} ${where}</div>
+      </div>
+      <div class="doc-actions">
+        <button title="Open" onclick="openDocument('${d.id}')">👁️</button>
+        <button title="Download" onclick="downloadDocument('${d.id}')">⬇️</button>
+        <button title="Delete" onclick="deleteDocument('${d.id}')">🗑️</button>
+      </div></div>`;
+  }).join('');
+}
+function setDocCategory(id,c){const d=docs.find(x=>x.id===id);if(d){d.category=c;save();}}
+async function getDocBlob(d){
+  let blob=null;
+  try{ blob=await idbGet(d.id); }catch(e){}
+  if(blob) return blob;
+  if(d.driveId){
+    if(!driveConnected()){ if(!await driveConnect()) return null; }
+    const r=await driveFetch('https://www.googleapis.com/drive/v3/files/'+d.driveId+'?alt=media');
+    blob=await r.blob();
+    if(d.type) blob=new Blob([blob],{type:d.type});
+    try{ await idbPut(d.id,blob); docLocal[d.id]=true; renderDocuments(); }catch(e){}
+    return blob;
+  }
+  return null;
+}
+async function openDocument(id){
+  const d=docs.find(x=>x.id===id);if(!d)return;
+  const w=window.open('','_blank');            // open now (keeps the click), fill it after loading
+  try{
+    const blob=await getDocBlob(d);
+    if(!blob){ if(w)w.close(); if(d.webViewLink){window.open(d.webViewLink,'_blank');return;} return alert('This file is not on this device and Drive is not connected.'); }
+    const url=URL.createObjectURL(blob.type?blob:new Blob([blob],{type:d.type||'application/pdf'}));
+    if(w) w.location.href=url; else window.open(url,'_blank');
+    setTimeout(()=>URL.revokeObjectURL(url),60000);
+  }catch(e){ if(w)w.close(); alert('Could not open the file: '+e.message); }
+}
+async function downloadDocument(id){
+  const d=docs.find(x=>x.id===id);if(!d)return;
+  try{
+    const blob=await getDocBlob(d);if(!blob)return alert('File not available on this device.');
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=d.name;document.body.appendChild(a);a.click();a.remove();
+    setTimeout(()=>URL.revokeObjectURL(a.href),5000);
+  }catch(e){alert('Download failed: '+e.message);}
+}
+async function deleteDocument(id){
+  const d=docs.find(x=>x.id===id);if(!d)return;
+  if(!confirm('Delete “'+d.name+'”?'+(d.driveId?'\nIt will also be moved to the Drive trash.':'')))return;
+  docs=docs.filter(x=>x.id!==id);
+  try{ await idbDel(id); }catch(e){}
+  delete docLocal[id];
+  if(d.driveId){ driveCfg.trash=(driveCfg.trash||[]).concat(d.driveId); saveDriveCfg(); }
+  logAction('delete',d.name,'Document deleted');
+  save();renderDocuments();notify('Document deleted');
+}
+refreshDocLocal().then(renderDocuments);
+
+/* ---------- Google Drive sync ---------- */
+const DRIVE_DEFAULT_CLIENT_ID=''; // paste your OAuth Client ID here to skip typing it on each device
+const DRIVE_API='https://www.googleapis.com/drive/v3/files';
+const DRIVE_CFG_KEY='inventiq-drive';
+let driveCfg={clientId:DRIVE_DEFAULT_CLIENT_ID,auto:true,folderId:'',docsFolderId:'',dataFileId:'',lastSyncTime:0,connectedOnce:false,trash:[]};
+try{Object.assign(driveCfg,JSON.parse(localStorage.getItem(DRIVE_CFG_KEY))||{});}catch(e){}
+if(!driveCfg.clientId) driveCfg.clientId=DRIVE_DEFAULT_CLIENT_ID;
+function saveDriveCfg(){localStorage.setItem(DRIVE_CFG_KEY,JSON.stringify(driveCfg));}
+let driveToken=null,driveTokenExp=0,driveBusy=false,driveQueued=false,driveTimer=null,driveState='off';
+
+function driveConnected(){return !!driveToken&&Date.now()<driveTokenExp;}
+function setCloud(state,msg){
+  driveState=state;
+  const b=document.getElementById('cloudBtn'),l=document.getElementById('cloudLabel');
+  b.className='cloud-btn '+({ok:'ok',sync:'sync',dirty:'warn',err:'err'}[state]||'');
+  const txt={off:'Drive',ok:'Synced',sync:'Syncing…',dirty:'Not synced',err:'Sync error'}[state]||'Drive';
+  l.textContent=txt;
+  b.title='Google Drive: '+(msg||txt)+(state==='dirty'||state==='off'||state==='err'?' — tap to sync':'');
+  const st=document.getElementById('driveStatus');
+  if(st) st.innerHTML=(driveConnected()?'✅ Connected':'⚪ Not connected')+(driveCfg.lastSyncTime?' · last sync '+new Date(driveCfg.lastSyncTime).toLocaleString():'')+(msg?'<br>'+chatEsc(msg):'');
+}
+function loadGis(){
+  return new Promise((res,rej)=>{
+    if(window.google&&google.accounts&&google.accounts.oauth2) return res();
+    const s=document.createElement('script');s.src='https://accounts.google.com/gsi/client';s.async=true;
+    s.onload=()=>res();s.onerror=()=>rej(new Error('Could not load Google sign-in — are you online?'));
+    document.head.appendChild(s);
+  });
+}
+async function driveConnect(){
+  if(!driveCfg.clientId){
+    switchTab('settings',document.querySelector('.sidebar-item[title="Settings"]'));
+    notify('Paste your Google Client ID in Settings first');
+    const i=document.getElementById('driveClientId'); if(i) i.focus();
+    return false;
+  }
+  if(location.protocol==='file:'){ alert('Google Drive only works when the app is opened from its web link (https), not from a file on the PC.'); return false; }
+  try{ await loadGis(); }catch(e){ setCloud('err',e.message); return false; }
+  return new Promise(resolve=>{
+    const tc=google.accounts.oauth2.initTokenClient({
+      client_id:driveCfg.clientId,
+      scope:'https://www.googleapis.com/auth/drive.file',
+      callback:r=>{
+        if(r.error){ setCloud('err',r.error); return resolve(false); }
+        driveToken=r.access_token; driveTokenExp=Date.now()+((+r.expires_in||3600)-60)*1000;
+        driveCfg.connectedOnce=true; saveDriveCfg(); setCloud('ok','Connected'); resolve(true);
+      },
+      error_callback:e=>{ setCloud(driveCfg.connectedOnce?'dirty':'off',(e&&e.type)==='popup_closed'?'Sign-in window closed':'Sign-in failed'); resolve(false); }
+    });
+    tc.requestAccessToken({prompt:driveCfg.connectedOnce?'':'consent'});
+  });
+}
+function driveDisconnect(){
+  if(driveToken&&window.google&&google.accounts) try{google.accounts.oauth2.revoke(driveToken,()=>{});}catch(e){}
+  driveToken=null;driveTokenExp=0;driveCfg.connectedOnce=false;saveDriveCfg();setCloud('off','Disconnected');
+}
+async function driveFetch(url,opts={}){
+  const r=await fetch(url,Object.assign({},opts,{headers:Object.assign({},opts.headers||{},{Authorization:'Bearer '+driveToken})}));
+  if(r.status===401){ driveToken=null; throw new Error('Drive session expired — tap ☁️ to reconnect'); }
+  if(!r.ok){ let m='HTTP '+r.status; try{const j=await r.json(); m=(j.error&&j.error.message)||m;}catch(e){} throw new Error(m); }
+  return r;
+}
+async function driveFind(q){
+  const r=await driveFetch(DRIVE_API+'?q='+encodeURIComponent(q+' and trashed=false')+'&fields=files(id,name,modifiedTime)&orderBy=modifiedTime desc&pageSize=10');
+  return (await r.json()).files||[];
+}
+async function driveFolder(name,parent){
+  const q="mimeType='application/vnd.google-apps.folder' and name='"+name+"'"+(parent?" and '"+parent+"' in parents":'');
+  const f=await driveFind(q); if(f.length) return f[0].id;
+  const r=await driveFetch(DRIVE_API+'?fields=id',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,mimeType:'application/vnd.google-apps.folder',parents:parent?[parent]:undefined})});
+  return (await r.json()).id;
+}
+async function driveUpload(meta,blob,fileId){
+  const b='inventiq'+Date.now();
+  const body=new Blob(['--'+b+'\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n'+JSON.stringify(meta)+'\r\n--'+b+'\r\nContent-Type: '+(blob.type||'application/octet-stream')+'\r\n\r\n',blob,'\r\n--'+b+'--']);
+  const url='https://www.googleapis.com/upload/drive/v3/files'+(fileId?'/'+fileId:'')+'?uploadType=multipart&fields=id,modifiedTime,webViewLink';
+  const r=await driveFetch(url,{method:fileId?'PATCH':'POST',headers:{'Content-Type':'multipart/related; boundary='+b},body});
+  return r.json();
+}
+function drivePayload(){
+  return {app:'InventIQ Pro',savedAt:new Date().toISOString(),devices,assignments,maintenance,orders,users,auditLog,docs,
+    settings:{company:appSettings.company,currency:appSettings.currency,aiKey:(typeof chatCfg!=='undefined'?chatCfg.apiKey:'')}};
+}
+function applyRemote(d,remoteTime){
+  devices=d.devices||[];assignments=d.assignments||[];maintenance=d.maintenance||[];orders=d.orders||[];users=d.users||[];auditLog=d.auditLog||[];docs=d.docs||[];
+  normalizeImported();
+  if(d.settings){
+    if(d.settings.company) appSettings.company=d.settings.company;
+    if(d.settings.currency) appSettings.currency=d.settings.currency;
+    localStorage.setItem('inventiq-settings',JSON.stringify(appSettings));
+    if(d.settings.aiKey&&typeof chatCfg!=='undefined'&&!chatCfg.apiKey){ chatCfg.apiKey=d.settings.aiKey; localStorage.setItem(CHAT_CFG_KEY,JSON.stringify(chatCfg)); }
+  }
+  localStorage.setItem('inventiq-pro',JSON.stringify({devices,assignments,maintenance,orders,users,auditLog,docs}));
+  localStorage.setItem('inventiq-lastchange',String(remoteTime));
+  [loadSettings,renderInventory,updateDashboard,initializeUsers,renderMaintenance,renderOrders,renderPendingApprovals,renderRecentActivity,renderDocuments]
+    .forEach(fn=>{try{fn();}catch(e){console.error(e);}});
+}
+async function driveSyncNow(opts={}){
+  if(!driveConnected()){
+    if(opts.interactive){ if(!await driveConnect()) return; }
+    else { setCloud(driveCfg.connectedOnce?'dirty':'off'); return; }
+  }
+  if(driveBusy){ driveQueued=true; return; }
+  driveBusy=true; setCloud('sync');
+  try{
+    // folders
+    driveCfg.folderId=await driveFolder('InventIQ Pro');
+    driveCfg.docsFolderId=await driveFolder('Documents',driveCfg.folderId);
+    saveDriveCfg();
+    // 1) newer data on Drive (from another device)?
+    const remote=(await driveFind("name='inventiq-data.json' and '"+driveCfg.folderId+"' in parents"))[0];
+    if(remote){
+      const remoteTime=Date.parse(remote.modifiedTime)||0;
+      if(remoteTime>(driveCfg.lastSyncTime||0)+1500){
+        const localDirty=(+localStorage.getItem('inventiq-lastchange')||0)>(driveCfg.lastSyncTime||0);
+        const hasLocal=devices.length||docs.length||assignments.length;
+        const take=!localDirty||!hasLocal||confirm('Google Drive has newer data from another device (saved '+new Date(remoteTime).toLocaleString()+').\n\nOK = use the Drive data on this device\nCancel = keep this device’s data and overwrite Drive');
+        if(take){
+          const data=await (await driveFetch(DRIVE_API+'/'+remote.id+'?alt=media')).json();
+          applyRemote(data,remoteTime);
+          driveCfg.dataFileId=remote.id; driveCfg.lastSyncTime=remoteTime; saveDriveCfg();
+          await refreshDocLocal(); renderDocuments();
+          setCloud('ok','Loaded the latest data from Drive'); notify('Loaded latest data from Google Drive');
+          return;
+        }
+      }
+    }
+    // 2) upload new documents, trash deleted ones
+    for(const d of docs.filter(x=>!x.driveId)){
+      const blob=await idbGet(d.id).catch(()=>null); if(!blob) continue;
+      const up=await driveUpload({name:d.name,parents:[driveCfg.docsFolderId],description:'InventIQ Pro — '+d.category},blob);
+      d.driveId=up.id; d.webViewLink=up.webViewLink||'';
+    }
+    for(const id of (driveCfg.trash||[]).slice()){
+      try{ await driveFetch(DRIVE_API+'/'+id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({trashed:true})}); }catch(e){ if(!/404|not found/i.test(e.message)) throw e; }
+      driveCfg.trash=driveCfg.trash.filter(x=>x!==id);
+    }
+    localStorage.setItem('inventiq-pro',JSON.stringify({devices,assignments,maintenance,orders,users,auditLog,docs}));
+    // 3) upload data
+    const up=await driveUpload(remote?{}:{name:'inventiq-data.json',parents:[driveCfg.folderId],mimeType:'application/json'},
+      new Blob([JSON.stringify(drivePayload())],{type:'application/json'}),remote&&remote.id);
+    driveCfg.dataFileId=up.id; driveCfg.lastSyncTime=Date.parse(up.modifiedTime)||Date.now(); saveDriveCfg();
+    localStorage.setItem('inventiq-lastchange',String(driveCfg.lastSyncTime));
+    renderDocuments();
+    setCloud('ok','Saved to Google Drive');
+  }catch(e){
+    console.error(e); setCloud(driveConnected()?'err':'dirty',e.message);
+  }finally{
+    driveBusy=false;
+    if(driveQueued){ driveQueued=false; scheduleDriveSync(); }
+  }
+}
+function scheduleDriveSync(){ clearTimeout(driveTimer); driveTimer=setTimeout(()=>driveSyncNow(),2500); }
+function onDataSaved(){
+  if(!driveCfg.connectedOnce) return;
+  if(driveCfg.auto&&driveConnected()) scheduleDriveSync(); else setCloud('dirty');
+}
+function driveButton(){
+  if(!driveCfg.clientId||!driveCfg.connectedOnce){ switchTab('settings',document.querySelector('.sidebar-item[title="Settings"]')); document.getElementById('driveClientId').focus(); return; }
+  driveSyncNow({interactive:true});
+}
+function driveSaveSettingsAndConnect(){
+  driveCfg.clientId=document.getElementById('driveClientId').value.trim();
+  driveCfg.auto=document.getElementById('driveAuto').checked; saveDriveCfg();
+  driveConnect().then(ok=>{ if(ok) driveSyncNow(); });
+}
+(function(){
+  document.getElementById('driveClientId').value=driveCfg.clientId||'';
+  document.getElementById('driveAuto').checked=driveCfg.auto!==false;
+  document.getElementById('driveAuto').onchange=e=>{driveCfg.auto=e.target.checked;saveDriveCfg();};
+  setCloud(driveCfg.connectedOnce?'dirty':'off',driveCfg.connectedOnce?'Tap to sync with Drive':'');
+  if(driveCfg.clientId&&location.protocol!=='file:') loadGis().catch(()=>{}); // preload so the sign-in popup opens instantly
+})();
+
+/* ---------- Installable app (PWA) ---------- */
+let installEvt=null;
+if('serviceWorker' in navigator && location.protocol.startsWith('http')){
+  navigator.serviceWorker.register('sw.js').catch(e=>console.warn('SW',e));
+}
+window.addEventListener('beforeinstallprompt',e=>{
+  e.preventDefault(); installEvt=e;
+  document.getElementById('installBtn').style.display='inline-block';
+  document.getElementById('installNote').textContent='Install InventIQ Pro as an app on this device — it gets its own icon and opens full-screen.';
+});
+window.addEventListener('appinstalled',()=>{document.getElementById('installBtn').style.display='none';document.getElementById('installNote').textContent='✅ Installed on this device.';});
+function installApp(){ if(installEvt){ installEvt.prompt(); installEvt=null; } }
+(function(){
+  const n=document.getElementById('installNote');
+  if(window.matchMedia('(display-mode: standalone)').matches) n.textContent='✅ Running as an installed app.';
+  else if(/iphone|ipad/i.test(navigator.userAgent)) n.textContent='On iPhone: open in Safari → Share → “Add to Home Screen”.';
+  else if(location.protocol.startsWith('http')) n.textContent='If no Install button appears: open the browser menu (⋮) → “Install app” / “Add to Home screen”.';
+})();
+</script>
+</body>
+</html>
