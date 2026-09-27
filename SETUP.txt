@@ -1,0 +1,46 @@
+INVENTIQ PRO — PUT IT ONLINE, INSTALL IT, CONNECT GOOGLE DRIVE
+==================================================================
+
+1) PUT THE APP ONLINE (free, about 5 minutes) — GitHub Pages
+   - Go to github.com, sign in, click "New repository".
+     Name: inventiq   ·  Visibility: Public   ·  Create.
+   - Click "uploading an existing file" and drag ALL the files of this folder
+     (index.html, sw.js, manifest.webmanifest, the 3 icons). Click "Commit changes".
+   - Settings -> Pages -> Source: "Deploy from a branch" -> Branch: main / (root) -> Save.
+   - After 1-2 minutes your app is at:  https://YOUR-GITHUB-NAME.github.io/inventiq/
+   Note: the link is public, but the data is NOT in it. Data stays on each device and in
+   your own Google Drive. No passwords or API keys are inside these files.
+
+2) INSTALL IT
+   - PC (Chrome or Edge): open the link -> click the install icon in the address bar
+     (or Settings page -> "Install InventIQ Pro").
+   - Android: open the link in Chrome -> menu (3 dots) -> "Install app" / "Add to Home screen".
+   - iPhone: open in Safari -> Share -> "Add to Home Screen".
+   Optional real .apk: go to pwabuilder.com, paste your link, choose Android -> download.
+
+3) CONNECT GOOGLE DRIVE (one time, about 10 minutes)
+   - Go to console.cloud.google.com -> create a project "InventIQ".
+   - APIs & Services -> Library -> search "Google Drive API" -> Enable.
+   - APIs & Services -> OAuth consent screen -> External -> app name "InventIQ Pro",
+     your email -> Save. In "Test users" (Audience) add your Gmail address.
+   - APIs & Services -> Credentials -> Create credentials -> OAuth client ID
+     -> Application type: Web application
+     -> Authorized JavaScript origins:  https://YOUR-GITHUB-NAME.github.io
+     -> Create, and copy the Client ID (ends with .apps.googleusercontent.com).
+   - In the app: Settings -> Google Drive Sync -> paste the Client ID -> "Connect Google Drive".
+     Do the same on the phone (same Client ID, same Google account).
+   Tip: send the Client ID to Claude and it can be built into index.html so you never type it.
+
+4) AI ASSISTANT KEY
+   - Open the chat (💬) -> ⚙️ -> paste your Gemini key once on the PC.
+     With Drive connected, the phone receives it automatically.
+
+HOW SAVING WORKS
+   - Every change is saved on the device, and (when ☁️ shows "Synced") in your Drive folder
+     "InventIQ Pro" (inventiq-data.json + a "Documents" folder with your PDFs).
+   - The Google sign-in lasts about 1 hour. When ☁️ says "Not synced", tap it to sync again.
+   - 💾 Save still makes a .json backup file whenever you want one.
+
+UPDATING THE APP LATER
+   - Upload the new index.html to the same GitHub repository. In sw.js change
+     inventiq-v1 to inventiq-v2 and upload it too, so phones pick up the new version.
