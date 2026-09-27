@@ -2022,7 +2022,7 @@ async function deleteDocument(id){
 refreshDocLocal().then(renderDocuments);
 
 /* ---------- Google Drive sync ---------- */
-const DRIVE_DEFAULT_CLIENT_ID=''; // paste your OAuth Client ID here to skip typing it on each device
+const DRIVE_DEFAULT_CLIENT_ID='426388765240-aihutkg597qqaj82hl99pqjacrb7kiqv.apps.googleusercontent.com';
 const DRIVE_API='https://www.googleapis.com/drive/v3/files';
 const DRIVE_CFG_KEY='inventiq-drive';
 let driveCfg={clientId:DRIVE_DEFAULT_CLIENT_ID,auto:true,folderId:'',docsFolderId:'',dataFileId:'',lastSyncTime:0,connectedOnce:false,trash:[]};
